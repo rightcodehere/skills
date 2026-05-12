@@ -20,7 +20,7 @@
   "homepage": "https://github.com/rightcodehere/rightcodeskills",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rightcodehere/rightcodeskills.git"
+    "url": "git+https://github.com/rightcodehere/rightcodeskills.git"
   },
   "license": "MIT",
   "author": "RightCode.app",
