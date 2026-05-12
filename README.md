@@ -7,10 +7,22 @@ Works with any agent that supports the [open skills ecosystem](https://skills.sh
 ## Quickstart
 
 ```bash
-npx skills add @rightcode/skills
+npx skills add rightcodehere/skills
 ```
 
 Pick the skills you want, select which agents to install them on. Done.
+
+To install all skills at once (no prompts):
+
+```bash
+npx skills add rightcodehere/skills --all
+```
+
+To install all skills to a specific agent only:
+
+```bash
+npx skills add rightcodehere/skills --skill '*' -a github-copilot
+```
 
 ---
 
@@ -105,13 +117,13 @@ All skills are prefixed `rightcode-` to prevent naming conflicts when combined w
 
 ```bash
 # Install just the code review tools
-npx skills add @rightcode/skills --skill rightcode-codeprobe --skill rightcode-code-review
+npx skills add rightcodehere/skills --skill rightcode-codeprobe --skill rightcode-code-review
 
 # Install all skills to all agents non-interactively
-npx skills add @rightcode/skills --all
+npx skills add rightcodehere/skills --all
 
 # Install globally (available in every project)
-npx skills add @rightcode/skills -g
+npx skills add rightcodehere/skills -g
 ```
 
 ## License

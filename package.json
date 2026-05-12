@@ -17,10 +17,10 @@
     "debugging",
     "architecture"
   ],
-  "homepage": "https://github.com/echarish/rightcodeskills",
+  "homepage": "https://github.com/rightcodehere/skills",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/echarish/rightcodeskills.git"
+    "url": "git+https://github.com/rightcodehere/skills.git"
   },
   "license": "MIT",
   "author": "RightCode.app",
