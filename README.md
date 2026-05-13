@@ -7,22 +7,10 @@ Works with any agent that supports the [open skills ecosystem](https://skills.sh
 ## Quickstart
 
 ```bash
-npx skills add rightcodehere/skills
+npx skills add echarish/rightcodeskills
 ```
 
 Pick the skills you want, select which agents to install them on. Done.
-
-To install all skills at once (no prompts):
-
-```bash
-npx skills add rightcodehere/skills --all
-```
-
-To install all skills to a specific agent only:
-
-```bash
-npx skills add rightcodehere/skills --skill '*' -a github-copilot
-```
 
 ---
 
@@ -101,15 +89,35 @@ Reports save to `./codeprobe-reports/<timestamp>.md`. Read-only — never modifi
 
 ---
 
-## Sources
+## What Is This?
 
-Skills in this collection are drawn from:
+The open skills ecosystem is generating incredible work across the community. Rather than reinvent the wheel, RightCode Skills serves as a **curated umbrella** — bringing together the best skills from talented builders, adapting them to a consistent workflow, and filling gaps with original work where nothing good exists yet.
 
-- **Custom RightCode skills** — `codeprobe` multi-agent review system and supporting workflow skills
-- **[mattpocock/skills](https://github.com/mattpocock/skills)** — `diagnose`, `tdd`, `grill-me`, `grill-with-docs`, `triage`, `to-issues`, `to-prd`, `zoom-out`, `prototype`, `caveman`, `handoff`, `write-a-skill`, `git-guardrails`, `setup-pre-commit`, `scaffold-exercises`, `migrate-to-shoehorn`
-- **[awesome-skills/code-review-skill](https://github.com/awesome-skills/code-review-skill)** — `code-review` (17+ language guides, 4-phase process)
+Every skill here has been reviewed, tested against real engineering workflows, and in many cases extended or restructured. The `rightcode-` prefix keeps the collection self-contained so it plays nicely alongside other skill packages without name collisions.
 
-All skills are prefixed `rightcode-` to prevent naming conflicts when combined with other skill packages.
+---
+
+## Credits & Attribution
+
+This collection stands on the shoulders of great work by:
+
+### [Matt Pocock](https://github.com/mattpocock) — [mattpocock/skills](https://github.com/mattpocock/skills)
+
+Matt built the engineering workflow backbone that most of this collection is built on. The following skills originate from his repo:
+
+`diagnose` · `tdd` · `grill-me` · `grill-with-docs` · `triage` · `to-issues` · `to-prd` · `zoom-out` · `prototype` · `caveman` · `handoff` · `write-a-skill` · `git-guardrails` · `setup-pre-commit` · `scaffold-exercises` · `migrate-to-shoehorn` · `setup-skills`
+
+### [Nishil Bhave](https://dev.to/nishilbhave) — [I built a multi-agent code review skill](https://dev.to/nishilbhave/i-built-a-multi-agent-code-review-skill-for-claude-code-heres-how-it-works-366i)
+
+Nishil's article and architecture inspired the entire `codeprobe` system — the idea of routing a code audit to specialist sub-skills in parallel, scoring findings by severity, and generating copy-pasteable fix prompts. The implementation here extends that foundation significantly.
+
+### [awesome-skills](https://github.com/awesome-skills) — [code-review-skill](https://github.com/awesome-skills/code-review-skill)
+
+A community-maintained single-skill repo with an outstanding collection of language and framework-specific review guides (17+ languages). Powers `rightcode-code-review`.
+
+---
+
+If you're building skills and want your work included here, open an issue or PR.
 
 ---
 
@@ -117,13 +125,13 @@ All skills are prefixed `rightcode-` to prevent naming conflicts when combined w
 
 ```bash
 # Install just the code review tools
-npx skills add rightcodehere/skills --skill rightcode-codeprobe --skill rightcode-code-review
+npx skills add @rightcode/skills --skill rightcode-codeprobe --skill rightcode-code-review
 
 # Install all skills to all agents non-interactively
-npx skills add rightcodehere/skills --all
+npx skills add @rightcode/skills --all
 
 # Install globally (available in every project)
-npx skills add rightcodehere/skills -g
+npx skills add @rightcode/skills -g
 ```
 
 ## License
