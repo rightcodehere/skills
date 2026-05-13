@@ -2,7 +2,7 @@
 
 > 31 battle-tested agent skills for real engineering teams.
 
-Works with any agent that supports the [open skills ecosystem](https://skills.sh/): Claude Code, GitHub Copilot, Cursor, Codex, Windsurf, Cline, and 50+ more.
+Works with any agent that supports the [open skills ecosystem](https://skills.sh/): Claude Code, GitHub Copilot, Cursor, Codex, Windsurf, Cline, IBM Bob, and 50+ more.
 
 ## Quickstart
 

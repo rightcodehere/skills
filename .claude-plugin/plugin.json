@@ -31,6 +31,7 @@
     "./skills/rightcode-to-prd",
     "./skills/rightcode-triage",
     "./skills/rightcode-write-a-skill",
-    "./skills/rightcode-zoom-out"
+    "./skills/rightcode-zoom-out",
+    "./skills/rightcode-skill-updater"
   ]
 }

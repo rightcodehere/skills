@@ -1,4 +1,4 @@
-# test-local.ps1 — Copy one or more skills to ~/.agents/skills/ for local testing
+# test-local.ps1 — Copy one or more skills to ~/.agents/skills/ and ~/.bob/skills/ for local testing
 # Usage:
 #   .\scripts\test-local.ps1                          # installs ALL skills
 #   .\scripts\test-local.ps1 rightcode-tdd            # installs one skill
@@ -10,7 +10,11 @@ param(
 )
 
 $SkillsSource = Join-Path $PSScriptRoot "..\skills"
-$SkillsDest   = Join-Path $env:USERPROFILE ".agents\skills"
+
+# Install targets: ~/.agents/skills/ (GitHub Copilot, Claude Code, Cursor, etc.)
+#                  ~/.bob/skills/    (IBM Bob)
+$SkillsDestAgents = Join-Path $env:USERPROFILE ".agents\skills"
+$SkillsDestBob    = Join-Path $env:USERPROFILE ".bob\skills"
 
 # Resolve skills to install
 if ($SkillNames.Count -eq 0) {
@@ -26,16 +30,18 @@ if ($SkillNames.Count -eq 0) {
     }
 }
 
-New-Item -ItemType Directory -Force -Path $SkillsDest | Out-Null
+foreach ($destRoot in @($SkillsDestAgents, $SkillsDestBob)) {
+    New-Item -ItemType Directory -Force -Path $destRoot | Out-Null
 
-foreach ($skill in $skills) {
-    $dest = Join-Path $SkillsDest $skill.Name
-    if (Test-Path $dest) {
-        Remove-Item -Recurse -Force $dest
+    foreach ($skill in $skills) {
+        $dest = Join-Path $destRoot $skill.Name
+        if (Test-Path $dest) {
+            Remove-Item -Recurse -Force $dest
+        }
+        Copy-Item -Recurse $skill.FullName $dest
+        Write-Host "Installed: $($skill.Name) -> $dest" -ForegroundColor Green
     }
-    Copy-Item -Recurse $skill.FullName $dest
-    Write-Host "Installed: $($skill.Name) -> $dest" -ForegroundColor Green
 }
 
 Write-Host ""
-Write-Host "Done. Reload VS Code (or your agent host) to pick up the changes." -ForegroundColor Cyan
+Write-Host "Done. Reload your agent host (VS Code, IBM Bob, etc.) to pick up the changes." -ForegroundColor Cyan
