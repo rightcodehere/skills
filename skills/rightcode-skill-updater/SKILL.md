@@ -16,6 +16,26 @@ argument-hint: "[check|sync|diff <skill-name>]"
 
 Keeps this repo in sync with the upstream skill sources. Read [SOURCES.md](./SOURCES.md) for the full source-to-local mapping table before starting.
 
+Reusable scripts live in [scripts/](./scripts/). They are plain Python 3 — no extra packages needed. Run them with `python` on Windows, macOS, or Linux.
+
+---
+
+## Prerequisites — GitHub Auth
+
+**Critical:** `gh` must be authenticated to **github.com specifically** before running any command.
+
+```powershell
+# Check if already logged in to github.com
+gh auth status --hostname github.com
+
+# If not logged in (or only logged in to a GHE instance):
+gh auth login --hostname github.com
+```
+
+> **GHE gotcha:** If your organisation uses GitHub Enterprise, `gh` is authenticated to your GHE host by default — **not** to github.com. The upstream skill repos are on github.com. You must always pass `--hostname github.com` on every `gh api` call, or the call will hit your GHE instance and return 404.
+>
+> **Rate limits:** Unauthenticated github.com calls are capped at **60 requests/hour** — enough for ~2 skills before hitting the limit. Authenticated calls get **5 000/hour**. Always authenticate before running a full sync.
+
 ---
 
 ## Commands
@@ -30,123 +50,95 @@ If the user runs the skill with no argument, run **check** first, then offer to 
 
 ---
 
-## Phase 1 — Fetch Upstream State
+## Execution — Use the Scripts
 
-Use the GitHub Contents API via the `gh` CLI. Never `git clone` — use API calls only (read-only, no local side effects).
+The scripts handle all phases automatically. They require **Python 3.8+** and the `gh` CLI — no pip installs.
 
-**mattpocock/skills** — skills are nested under category subfolders, not flat:
-```powershell
-# Skills live at skills/<category>/<name>/ — scan each tracked category
-gh api repos/mattpocock/skills/contents/skills/engineering --jq '[.[] | select(.type=="dir") | .name]'
-gh api repos/mattpocock/skills/contents/skills/productivity --jq '[.[] | select(.type=="dir") | .name]'
-gh api repos/mattpocock/skills/contents/skills/misc --jq '[.[] | select(.type=="dir") | .name]'
+- **macOS / Linux**: Python 3 is pre-installed. `python3 check.py` or `python check.py`.
+- **Windows**: Download from https://python.org if needed. Use `python check.py` in any terminal.
 
-# List files inside a specific skill folder
-gh api repos/mattpocock/skills/contents/skills/engineering/tdd --jq '.[].name'
+### check (Phase 1 + 2)
 
-# Fetch a specific file
-gh api repos/mattpocock/skills/contents/skills/engineering/tdd/SKILL.md --jq '.content' | base64 -d
+```bash
+# From any directory — works on Windows, macOS, Linux
+python skills/rightcode-skill-updater/scripts/check.py
 ```
 
-**awesome-skills/code-review-skill** — single-skill repo, `SKILL.md` is at the repository root:
-```powershell
-# SKILL.md is at root, not inside a skills/ folder
-gh api repos/awesome-skills/code-review-skill/contents/SKILL.md --jq '.content' | base64 -d
+The script:
+- Verifies `gh auth --hostname github.com` before doing anything.
+- Scans `engineering`, `productivity`, `misc`, and `in-progress` for new upstream skills.
+- Diffs every mapped skill file against its local copy.
+- Checks `awesome-skills/code-review-skill` reference files.
+- Saves a `report.json` to a temp directory and prints the path.
+- Prints the summary and, if there are changes, shows the `apply.ps1` command to run next.
 
-# List reference files
-gh api repos/awesome-skills/code-review-skill/contents/reference --jq '[.[].name]'
+### sync (Phase 3 + 4)
 
-# Fetch a reference file
-gh api repos/awesome-skills/code-review-skill/contents/reference/typescript.md --jq '.content' | base64 -d
+```bash
+# Pass the report path printed by check.py
+python skills/rightcode-skill-updater/scripts/apply.py --report-path "<path from check output>"
 ```
 
-> If `gh` is not available, fall back to `Invoke-RestMethod` against `https://api.github.com/repos/{owner}/{repo}/contents/...`. No auth required for public repos.
+The script walks through each changed/new skill, asks `[y/n/file-by-file]`, and writes only the approved files.
 
 ---
 
-## Phase 2 — Build the Change Report
+## What the Scripts Do (Phase Reference)
 
-Cross-reference the upstream folders with the mapping table in [SOURCES.md](./SOURCES.md).
+### Phase 1 — Detect new upstream skills
 
-### 2a — New skills (upstream has, local does not)
+Scans `engineering`, `productivity`, `misc`, and `in-progress` categories in `mattpocock/skills`. Any folder not in the SOURCES.md mapping table (and not in the skip list) is flagged as **NEW**.
 
-For each upstream skill folder that has **no matching local folder** in the mapping table:
-- Mark as **NEW — not yet in this repo**.
-- Fetch its full file list so you can show what would be added.
-- Note its upstream category path (e.g. `skills/engineering/new-thing`).
+All `gh api` calls use `--hostname github.com`. Base64 content is decoded with Python's `base64.b64decode()` — works identically on every OS.
 
-### 2b — Changed files (upstream differs from local)
+### Phase 2 — Diff mapped skills
 
-For each mapped skill, compare every file that exists in both:
-1. Fetch the upstream file content.
-2. Read the local file content.
-3. Produce a unified diff (use PowerShell `Compare-Object` on lines, or write the two versions to temp files and run `git diff --no-index`).
-4. If there are differences, mark the skill as **CHANGED** and record the differing files.
+For each mapped skill, every tracked file is fetched and compared to its local copy using `Compare-Object` on normalised lines (CRLF → LF before comparing). Changed files are stored in the report with `+add / -del` counts and the upstream content cached for apply.
 
-### 2c — Local-only skills
+### Phase 3 — Interactive confirmation
 
-Skills listed under "Local-only Skills" in SOURCES.md are skipped — they have no upstream to diff against. This includes all `rightcode-codeprobe-*` sub-skills.
+`apply.ps1` asks per skill: `[y / n / file-by-file]`. Nothing is written until confirmed.
 
-### 2d — Produce the summary
+### Phase 4 — Write approved files
 
-Print a report in this format:
-
-```
-## Upstream Sync Report  (<date>)
-
-### New Skills (N)
-- upstream: <folder>  →  would become: rightcode-<folder>
-  Files: SKILL.md, scripts/foo.py, ...
-
-### Changed Skills (N)
-- rightcode-<name>
-  Changed files: SKILL.md (+12 / -3), scripts/bar.js (+5 / -0)
-
-### Unchanged Skills (N)
-- rightcode-<name>, ...
-
-### Local-only Skills (not checked)
-- rightcode-code-review, rightcode-migrate-to-shoehorn, ...
-```
-
-Ask the user: "Would you like to review and apply any of these changes? (yes / select / no)"
+- `write_skill_file()` uses `pathlib.Path` — handles separators correctly on every OS.
+- For new skills, `name:` in `SKILL.md` frontmatter is rewritten to `rightcode-<name>` via regex.
+- After adding a new skill, a reminder is printed to update [SOURCES.md](./SOURCES.md).
 
 ---
 
-## Phase 3 — Interactive Sync (sync command only)
+## Manual API Reference
 
-If the user says **yes** or **select**:
+If you need to run one-off queries (e.g. for `diff <skill-name>`):
 
-1. For each **NEW** skill, ask: "Add `rightcode-<name>`? [y/n]"
-2. For each **CHANGED** skill, show the per-file diffs and ask: "Apply changes to `rightcode-<name>`? [y/n/file-by-file]"
-   - If "file-by-file", ask for each differing file individually.
-3. Once selections are confirmed, proceed to Phase 4.
+```bash
+# Always include --hostname github.com
 
-Do **not** apply anything without explicit per-skill confirmation.
+# List skills in a category
+gh api --hostname github.com repos/mattpocock/skills/contents/skills/engineering --jq '[.[] | select(.type=="dir") | .name]'
+
+# List files in a skill folder
+gh api --hostname github.com repos/mattpocock/skills/contents/skills/engineering/tdd --jq '[.[].name]'
+
+# Fetch and decode a file (Python one-liner — works on Windows, macOS, Linux)
+gh api --hostname github.com repos/mattpocock/skills/contents/skills/engineering/tdd/SKILL.md --jq '.content' | python -c "import sys,base64,re; print(base64.b64decode(re.sub(r'\\s','',sys.stdin.read())).decode())"
+
+# awesome-skills/code-review-skill — SKILL.md is at repo root (not in a skills/ subfolder)
+gh api --hostname github.com repos/awesome-skills/code-review-skill/contents/SKILL.md --jq '.content'
+```
 
 ---
 
-## Phase 4 — Apply Changes
+## Adding a new skill (manual fallback)
 
-### Adding a new skill
+If the interactive script is not available:
 
-1. Create the folder `skills/rightcode-<name>/`.
-2. Copy each upstream file, downloading via the GitHub API.
-3. In `SKILL.md` frontmatter, set `name:` to `rightcode-<name>` to follow local convention.
-4. **For mattpocock/skills**: update any internal cross-skill references that used bare upstream names (e.g. skill invocations referencing `diagnose` should become `rightcode-diagnose`).
-5. **For awesome-skills/code-review-skill**: if adding reference files, mirror them into the local skill's `reference/` subfolder.
-6. Add the new mapping row to [SOURCES.md](./SOURCES.md).
-
-### Updating an existing skill
-
-1. For each approved file, write the upstream content to the local path.
-2. Do **not** overwrite local files that were not in the approved list.
-
-### Naming convention rules
-
-- Folder name: always `rightcode-<upstream-name>` (no double prefix).
-- SKILL.md frontmatter `name:` field must match the folder name exactly.
-- All internal `[link](./path)` references are relative and need no changes.
+1. Create `skills/rightcode-<name>/`.
+2. Download each file via the API (decode base64 with PowerShell as shown above).
+3. Set `name: rightcode-<name>` in `SKILL.md` frontmatter.
+4. **For mattpocock/skills**: update any bare skill invocation references (`diagnose` → `rightcode-diagnose`).
+5. **For awesome-skills/code-review-skill**: mirror reference files into the local `reference/` subfolder.
+6. Add the mapping row to [SOURCES.md](./SOURCES.md).
 
 ---
 
@@ -165,9 +157,13 @@ After writing all changes:
 
 | Situation | Action |
 |---|---|
-| `gh` CLI not authenticated | Tell the user to run `gh auth login` and retry |
-| Upstream repo renamed or moved | Update SOURCES.md and notify the user |
+| `gh` authenticated to GHE, not github.com | Run `gh auth login --hostname github.com`; always pass `--hostname github.com` on every API call |
+| `gh` not authenticated at all | Run `gh auth login --hostname github.com` |
+| Rate limit hit (HTTP 403, 60/hr) | Authenticate to github.com — authenticated limit is 5 000/hr |
+| `base64 -d` not available (Windows) | Use `[System.Convert]::FromBase64String()` — the scripts already do this |
+| Upstream repo returns 404 | Verify repo still exists; update SOURCES.md if renamed/moved |
 | Upstream file is binary or non-text | Skip with a warning |
 | Local skill has diverged intentionally (custom edits) | Show the diff and let the user decide — never auto-overwrite |
-| New upstream sub-folder inside an existing skill (e.g. `scripts/new.py`) | Treat as a **CHANGED** file and include in diff |
+| New upstream sub-folder inside an existing skill (e.g. `scripts/new.py`) | Treat as a new file; `check.ps1` will surface it |
 | Upstream adds a skill already covered by a local-only skill | Flag as a potential conflict; do not auto-merge |
+| Python not installed on Windows | Download from https://python.org (3.8+) |

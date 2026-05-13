@@ -1,8 +1,7 @@
 ---
-name: rightcode-code-review
+name: code-review-excellence
 description: |
-  Provides comprehensive code review guidance for React 19, Vue 3, Angular 17+, Svelte 5, Rust, TypeScript,
-  Java, Python, Django, Go, C#/.NET, Kotlin, NestJS, C/C++, and more.
+  Provides comprehensive code review guidance for React 19, Vue 3, Angular 17+, Svelte 5, Rust, TypeScript, Java, Python, Django, Go, C#/.NET, Kotlin, NestJS, C/C++, and more.
   Helps catch bugs, improve code quality, and give constructive feedback.
   Use when: reviewing pull requests, conducting PR reviews, code review, reviewing code changes,
   establishing review standards, mentoring developers, architecture reviews, security audits,
@@ -11,8 +10,8 @@ allowed-tools:
   - Read
   - Grep
   - Glob
-  - Bash
-  - WebFetch
+  - Bash      # 运行 lint/test/build 命令验证代码质量
+  - WebFetch  # 查阅最新文档和最佳实践
 ---
 
 # Code Review Excellence
@@ -59,13 +58,16 @@ Transform code reviews from gatekeeping to knowledge sharing through constructiv
 
 ```markdown
 ❌ Bad: "This is wrong."
-✅ Good: "This could cause a race condition when multiple users access simultaneously. Consider using a mutex here."
+✅ Good: "This could cause a race condition when multiple users
+         access simultaneously. Consider using a mutex here."
 
 ❌ Bad: "Why didn't you use X pattern?"
-✅ Good: "Have you considered the Repository pattern? It would make this easier to test. Here's an example: [link]"
+✅ Good: "Have you considered the Repository pattern? It would
+         make this easier to test. Here's an example: [link]"
 
 ❌ Bad: "Rename this variable."
-✅ Good: "[nit] Consider `userCount` instead of `uc` for clarity. Not blocking if you prefer to keep it."
+✅ Good: "[nit] Consider `userCount` instead of `uc` for
+         clarity. Not blocking if you prefer to keep it."
 ```
 
 ### 3. Review Scope
@@ -115,7 +117,7 @@ For each file, check:
 - **Security** - Input validation, injection risks, XSS, sensitive data
 - **Performance** - N+1 queries, unnecessary loops, memory leaks
 - **Maintainability** - Clear names, single responsibility, comments
-- **Reuse** - Before accepting new code, search for existing utilities/helpers. See [Universal Quality Guide](reference/code-quality-universal.md) for anti-patterns like parameter sprawl, leaky abstractions, nested conditionals, stringly-typed code, TOCTOU, and no-op updates.
+- **Reuse** - Before accepting new code, search for existing utilities/helpers that could replace it. Check adjacent files and shared modules for similar patterns. See [Universal Quality Guide](reference/code-quality-universal.md) for anti-patterns like parameter sprawl, leaky abstractions, nested conditionals, stringly-typed code, TOCTOU, and no-op updates.
 
 ### Phase 4: Summary & Decision (2-3 minutes)
 
@@ -170,27 +172,27 @@ Use labels to indicate priority:
 
 ## Language-Specific Guides
 
-Load the appropriate guide based on the language being reviewed:
+根据审查的代码语言，查阅对应的详细指南：
 
 | Language/Framework | Reference File | Key Topics |
 |-------------------|----------------|------------|
 | **React** | [React Guide](reference/react.md) | Hooks, useEffect, React 19 Actions, RSC, Suspense, TanStack Query v5 |
-| **Vue 3** | [Vue Guide](reference/vue.md) | Composition API, Reactivity, Props/Emits, Watchers, Composables |
-| **Angular 17+** | [Angular Guide](reference/angular.md) | Signals, Standalone components, RxJS, Zoneless change detection |
-| **Svelte 5** | [Svelte Guide](reference/svelte.md) | Runes, Load functions, Form Actions, SSR/CSR boundary |
-| **TypeScript** | [TypeScript Guide](reference/typescript.md) | Type safety, async/await, immutability |
-| **Rust** | [Rust Guide](reference/rust.md) | Ownership/borrowing, Unsafe review, async code, error handling |
-| **Python** | [Python Guide](reference/python.md) | Mutable defaults, exception handling, class attributes |
-| **Django / DRF** | [Django Guide](reference/django.md) | Security review, N+1 queries, Serializer anti-patterns, ViewSet |
-| **Java** | [Java Guide](reference/java.md) | Java 17/21 features, Spring Boot 3, Virtual threads, Stream/Optional |
-| **C# / .NET** | [C# Guide](reference/csharp.md) | C# 12 features, async programming, EF Core performance, ASP.NET Core |
-| **Go** | [Go Guide](reference/go.md) | Error handling, goroutines/channels, context, interface design |
-| **Kotlin / Android** | [Kotlin Guide](reference/kotlin.md) | Coroutines, Flow, Jetpack Compose, null safety, memory leaks |
-| **NestJS** | [NestJS Guide](reference/nestjs.md) | DI, layered architecture, DTO validation, Guard/Interceptor |
-| **C** | [C Guide](reference/c.md) | Pointer/buffer safety, memory safety, undefined behavior, error handling |
-| **C++** | [C++ Guide](reference/cpp.md) | RAII, lifetimes, Rule of 0/3/5, exception safety |
-| **CSS/Less/Sass** | [CSS Guide](reference/css-less-sass.md) | Variable conventions, !important, performance, responsive |
-| **Qt** | [Qt Guide](reference/qt.md) | Object model, signals/slots, memory management, thread safety |
+| **Vue 3** | [Vue Guide](reference/vue.md) | Composition API, 响应性系统, Props/Emits, Watchers, Composables |
+| **Angular 17+** | [Angular Guide](reference/angular.md) | Signals, Standalone 组件, RxJS, Zoneless 变更检测, 模板优化 |
+| **Rust** | [Rust Guide](reference/rust.md) | 所有权/借用, Unsafe 审查, 异步代码, 取消安全性, 错误处理 |
+| **TypeScript** | [TypeScript Guide](reference/typescript.md) | 类型安全, async/await, 不可变性 |
+| **Python** | [Python Guide](reference/python.md) | 可变默认参数, 异常处理, 类属性 |
+| **Django / DRF** | [Django Guide](reference/django.md) | 安全审查, N+1 查询, Serializer 反模式, ViewSet, 异步视图 |
+| **Java** | [Java Guide](reference/java.md) | Java 17/21 新特性, Spring Boot 3, 虚拟线程, Stream/Optional |
+| **C# / .NET** | [C# Guide](reference/csharp.md) | C# 12 特性, 异步编程, EF Core 性能, ASP.NET Core, LINQ |
+| **Go** | [Go Guide](reference/go.md) | 错误处理, goroutine/channel, context, 接口设计 |
+| **Kotlin / Android** | [Kotlin Guide](reference/kotlin.md) | 协程, Flow, Jetpack Compose, 空安全, 内存泄漏, 架构模式 |
+| **NestJS** | [NestJS Guide](reference/nestjs.md) | 依赖注入, 分层架构, DTO 验证, Guard/Interceptor, 循环依赖 |
+| **Svelte / SvelteKit** | [Svelte Guide](reference/svelte.md) | Runes, Load 函数, Form Actions, Store 迁移, SSR/CSR 边界 |
+| **C** | [C Guide](reference/c.md) | 指针/缓冲区, 内存安全, UB, 错误处理 |
+| **C++** | [C++ Guide](reference/cpp.md) | RAII, 生命周期, Rule of 0/3/5, 异常安全 |
+| **CSS/Less/Sass** | [CSS Guide](reference/css-less-sass.md) | 变量规范, !important, 性能优化, 响应式, 兼容性 |
+| **Qt** | [Qt Guide](reference/qt.md) | 对象模型, 信号/槽, 内存管理, 线程安全, 性能 |
 
 ## Cross-Cutting Guides
 
@@ -199,19 +201,13 @@ Language-agnostic patterns applicable to all code reviews:
 | Topic | Reference File | Key Topics |
 |-------|----------------|------------|
 | **Universal Quality** | [Universal Quality Guide](reference/code-quality-universal.md) | Reuse audit, parameter sprawl, leaky abstractions, nested conditionals, stringly-typed code, TOCTOU, no-op updates, redundant state |
-| **Architecture** | [Architecture Review Guide](reference/architecture-review-guide.md) | SOLID, anti-patterns, coupling/cohesion |
-| **Performance** | [Performance Review Guide](reference/performance-review-guide.md) | Core Web Vitals, N+1, memory leaks |
-| **Security** | [Security Review Guide](reference/security-review-guide.md) | Security checklist (all languages) |
-| **Common Bugs** | [Common Bugs Checklist](reference/common-bugs-checklist.md) | Language-specific bug patterns |
-| **Process** | [Code Review Best Practices](reference/code-review-best-practices.md) | Communication and process guidelines |
 
 ## Additional Resources
 
-- [PR Review Template](assets/pr-review-template.md) - Template for PR review comments
-- [Review Checklist](assets/review-checklist.md) - Quick reference checklist
-
-> **Note**: Reference files (reference/*.md, assets/*.md) are sourced from [awesome-skills/code-review-skill](https://github.com/awesome-skills/code-review-skill). Clone that repo alongside this skill for the full 14,000+ lines of language guides, or run:
-> ```bash
-> npx skills add awesome-skills/code-review-skill
-> ```
-> to install the original skill with all reference files included.
+- [Architecture Review Guide](reference/architecture-review-guide.md) - 架构设计审查指南（SOLID、反模式、耦合度）
+- [Performance Review Guide](reference/performance-review-guide.md) - 性能审查指南（Web Vitals、N+1、复杂度）
+- [Common Bugs Checklist](reference/common-bugs-checklist.md) - 按语言分类的常见错误清单
+- [Security Review Guide](reference/security-review-guide.md) - 安全审查指南
+- [Code Review Best Practices](reference/code-review-best-practices.md) - 代码审查最佳实践
+- [PR Review Template](assets/pr-review-template.md) - PR 审查评论模板
+- [Review Checklist](assets/review-checklist.md) - 快速参考清单

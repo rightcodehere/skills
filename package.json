@@ -27,6 +27,9 @@
   "files": [
     "skills/**"
   ],
+  "scripts": {
+    "test:local": "pwsh -File scripts/test-local.ps1"
+  },
   "publishConfig": {
     "access": "public"
   }

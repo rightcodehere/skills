@@ -1,5 +1,5 @@
 ---
-name: rightcode-migrate-to-shoehorn
+name: migrate-to-shoehorn
 description: Migrate test files from `as` type assertions to @total-typescript/shoehorn. Use when user mentions shoehorn, wants to replace `as` in tests, or needs partial test data.
 ---
 
@@ -96,11 +96,11 @@ getUser(fromAny({ body: { id: 123 } }));
 
 ## When to use each
 
-| Function        | Use case                                          |
-| --------------- | ------------------------------------------------- |
-| `fromPartial()` | Pass partial data that still type-checks          |
-| `fromAny()`     | Pass intentionally wrong data (keeps autocomplete)|
-| `fromExact()`   | Force full object (swap with fromPartial later)   |
+| Function        | Use case                                           |
+| --------------- | -------------------------------------------------- |
+| `fromPartial()` | Pass partial data that still type-checks           |
+| `fromAny()`     | Pass intentionally wrong data (keeps autocomplete) |
+| `fromExact()`   | Force full object (swap with fromPartial later)    |
 
 ## Workflow
 
