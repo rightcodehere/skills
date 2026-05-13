@@ -7,7 +7,7 @@ Works with any agent that supports the [open skills ecosystem](https://skills.sh
 ## Quickstart
 
 ```bash
-npx skills add echarish/rightcodeskills
+npx skills add rightcodehere/skills
 ```
 
 Pick the skills you want, select which agents to install them on. Done.
