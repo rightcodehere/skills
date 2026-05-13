@@ -130,27 +130,33 @@ def apply_changed(skills_root: Path, skill: dict) -> None:
             return f"repos/{skill['upstream']}/contents/{f}"
         return f"repos/{skill['upstream']}/contents/{up_path}/{f}"
 
+    def _safe_content(filename: str, content: str) -> str:
+        """Rewrite name: in SKILL.md frontmatter to the local skill name before writing."""
+        if filename == "SKILL.md":
+            return re.sub(r"(?m)^name:\s*.+$", f"name: {skill['local']}", content)
+        return content
+
     if ans == "y":
         for f in skill["changedFiles"]:
-            write_skill_file(skills_root, skill["local"], f["file"], f["upContent"])
+            write_skill_file(skills_root, skill["local"], f["file"], _safe_content(f["file"], f["upContent"]))
         for f in skill["newFiles"]:
             api_path = _new_file_api_path(skill["upPath"], f)
             content  = fetch_upstream_file(api_path)
             if content is not None:
-                write_skill_file(skills_root, skill["local"], f, content)
+                write_skill_file(skills_root, skill["local"], f, _safe_content(f, content))
 
     elif ans == "file-by-file":
         for f in skill["changedFiles"]:
             fa = ask(f"  Apply {f['file']} (+{f['add']} / -{f['del']})? [y/n]: ")
             if fa == "y":
-                write_skill_file(skills_root, skill["local"], f["file"], f["upContent"])
+                write_skill_file(skills_root, skill["local"], f["file"], _safe_content(f["file"], f["upContent"]))
         for f in skill["newFiles"]:
             fa = ask(f"  Add new file {f}? [y/n]: ")
             if fa == "y":
                 api_path = _new_file_api_path(skill["upPath"], f)
                 content  = fetch_upstream_file(api_path)
                 if content is not None:
-                    write_skill_file(skills_root, skill["local"], f, content)
+                    write_skill_file(skills_root, skill["local"], f, _safe_content(f, content))
 
     else:
         print(dim("  Skipped."))

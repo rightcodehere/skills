@@ -211,6 +211,11 @@ def _normalise(text: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
+def _rewrite_name_field(content: str, local_name: str) -> str:
+    """Replace the name: frontmatter field with the local skill name to avoid spurious diffs."""
+    return re.sub(r"(?m)^name:\s*.+$", f"name: {local_name}", content)
+
+
 def diff_counts(upstream: str, local_text: str) -> tuple[int, int]:
     """Return (added_lines, deleted_lines) between upstream and local."""
     up_lines    = _normalise(upstream).splitlines()
@@ -291,6 +296,10 @@ def diff_mattpocock_skills(skills_root: Path) -> list[dict]:
                 fetch_errors.append(f)
                 continue
 
+            # Preserve the local name field so it never gets overwritten by the upstream name
+            if f == "SKILL.md":
+                content = _rewrite_name_field(content, m["local"])
+
             local_path = skills_root / m["local"] / Path(f)
             cmp = compare_file(content, local_path)
             if cmp is None:
@@ -333,6 +342,10 @@ def diff_code_review_skill(skills_root: Path) -> dict:
             print(f" {red('SKIP (fetch error)')}")
             fetch_errors.append(f)
             continue
+
+        # Preserve the local name field so it never gets overwritten by the upstream name
+        if f == "SKILL.md":
+            content = _rewrite_name_field(content, "rightcode-code-review")
 
         local_path = skills_root / "rightcode-code-review" / Path(f)
         cmp = compare_file(content, local_path)

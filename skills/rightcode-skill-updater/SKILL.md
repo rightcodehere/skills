@@ -102,7 +102,7 @@ For each mapped skill, every tracked file is fetched and compared to its local c
 ### Phase 4 — Write approved files
 
 - `write_skill_file()` uses `pathlib.Path` — handles separators correctly on every OS.
-- For new skills, `name:` in `SKILL.md` frontmatter is rewritten to `rightcode-<name>` via regex.
+- The `name:` field in every `SKILL.md` is **always rewritten to the local `rightcode-*` name** — both when syncing changed files and when adding new skills. Upstream skill names are never written to disk.
 - After adding a new skill, a reminder is printed to update [SOURCES.md](./SOURCES.md).
 
 ---

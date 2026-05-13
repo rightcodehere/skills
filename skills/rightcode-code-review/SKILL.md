@@ -1,5 +1,5 @@
 ---
-name: code-review-excellence
+name: rightcode-code-review-excellence
 description: |
   Provides comprehensive code review guidance for React 19, Vue 3, Angular 17+, Svelte 5, Rust, TypeScript, Java, Python, Django, Go, C#/.NET, Kotlin, NestJS, C/C++, and more.
   Helps catch bugs, improve code quality, and give constructive feedback.
