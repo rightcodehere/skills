@@ -1,6 +1,6 @@
 ---
 name: rightcode-git-commit-push
-description: Creates a local git commit and optionally pushes it using a bundled Python script that inspects changed files, builds a commit message from user input plus git metadata, and prompts for remote selection when needed. Use when the user wants a local-only commit/push flow, asks to commit and push without using model tokens, or mentions generated commit messages, remote selection, or scripted git automation.
+description: Creates a local git commit and optionally pushes it using a bundled Python script that inspects changed files, generates the commit message locally from git state, and supports a one-shot auto-approve mode. Use when the user wants a local-only commit/push flow, asks to commit and push without using model tokens, or mentions generated commit messages, remote selection, or scripted git automation.
 disable-model-invocation: true
 argument-hint: "[optional short summary]"
 ---
@@ -12,22 +12,22 @@ Runs a bundled Python script so the commit and push flow happens locally in the 
 The script:
 - detects the current git repo automatically
 - inspects changed and untracked files
-- asks for a short user summary if one is not provided
-- generates a conventional-style commit subject locally
+- generates a conventional-style commit subject locally from the changed files when no message is provided
 - stages changes with `git add -A`
 - commits locally
 - pushes only if a remote exists
 - asks the user which remote to use when multiple remotes exist
+- can skip commit and push confirmations with `--yes`
 
 ## Quick Start
 
 From anywhere inside the target repo:
 
 ```bash
-python skills/rightcode-git-commit-push/scripts/git_commit_push.py --message "short summary"
+python skills/rightcode-git-commit-push/scripts/git_commit_push.py --yes
 ```
 
-If no summary is passed, the script prompts for one.
+That runs the full local flow with an auto-generated subject and no confirmation prompts unless remote choice is ambiguous.
 
 ## Options
 
@@ -41,14 +41,14 @@ Useful flags:
 - `--no-push` to commit locally only even if remotes exist
 - `--dry-run` to preview the generated commit message and chosen remote without changing git state
 - `--repo <path>` to target a specific repository
+- `--yes` to auto-accept the generated subject and skip commit/push confirmations
 
 ## Expected Flow
 
 1. Run the script.
-2. Review the detected changed files.
-3. Accept or edit the generated commit subject.
-4. Confirm the commit.
-5. If remotes exist, choose one remote and confirm push.
+2. Review the detected changed files and generated subject.
+3. If you did not pass `--yes`, optionally edit the subject.
+4. If multiple remotes exist and `--remote` was not passed, choose one remote.
 
 If no remotes are configured, the script commits locally and exits cleanly.
 

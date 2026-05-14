@@ -13,6 +13,10 @@ class ChangedFile:
     code: str
     path: str
 
+    @property
+    def path_obj(self) -> Path:
+        return Path(self.path)
+
 
 STATUS_LABELS = {
     "A": "added",
@@ -121,6 +125,77 @@ def choose_remote(remotes: list[str], requested_remote: str | None) -> str | Non
         print("Enter a valid remote number.")
 
 
+def status_flags(code: str) -> set[str]:
+    return {char for char in code if char != " "}
+
+
+def unique_paths(files: list[ChangedFile]) -> list[str]:
+    return [item.path for item in files]
+
+
+def summarize_target_name(path: str) -> str:
+    parts = Path(path).parts
+    if not parts:
+        return Path(path).stem.replace("-", " ").replace("_", " ")
+    if parts[0] == "skills" and len(parts) >= 2 and parts[1].startswith("rightcode-"):
+        return parts[1].removeprefix("rightcode-").replace("-", " ")
+    if len(parts) >= 2:
+        return parts[1].replace("-", " ").replace("_", " ")
+    return Path(path).stem.replace("-", " ").replace("_", " ")
+
+
+def derive_summary_from_files(files: list[ChangedFile]) -> str:
+    paths = unique_paths(files)
+    added = [item for item in files if "?" in status_flags(item.code) or "A" in status_flags(item.code)]
+    deleted = [item for item in files if "D" in status_flags(item.code)]
+    modified = [item for item in files if item not in added and item not in deleted]
+
+    new_skill_dirs = sorted(
+        {
+            item.path_obj.parts[1]
+            for item in added
+            if len(item.path_obj.parts) >= 2 and item.path_obj.parts[0] == "skills" and item.path_obj.parts[1].startswith("rightcode-")
+        }
+    )
+    if len(new_skill_dirs) == 1:
+        return f"add {new_skill_dirs[0].removeprefix('rightcode-').replace('-', ' ')} skill"
+
+    changed_skill_dirs = sorted(
+        {
+            item.path_obj.parts[1]
+            for item in files
+            if len(item.path_obj.parts) >= 2 and item.path_obj.parts[0] == "skills" and item.path_obj.parts[1].startswith("rightcode-")
+        }
+    )
+    if len(changed_skill_dirs) == 1:
+        action = "update"
+        if added and not modified and not deleted:
+            action = "add"
+        elif deleted and not added and not modified:
+            action = "remove"
+        return f"{action} {changed_skill_dirs[0].removeprefix('rightcode-').replace('-', ' ')} skill"
+
+    top_level = sorted({Path(path).parts[0] for path in paths if Path(path).parts})
+    if len(top_level) == 1:
+        target = summarize_target_name(paths[0])
+        category = top_level[0]
+        if category == ".github":
+            return "update GitHub automation"
+        if category == "docs" or all(path.endswith((".md", ".mdx", ".txt")) for path in paths):
+            return "update documentation"
+        if added and not modified and not deleted:
+            return f"add {target}"
+        if deleted and not added and not modified:
+            return f"remove {target}"
+        return f"update {target}"
+
+    if added and not deleted:
+        return "add requested changes"
+    if deleted and not added and not modified:
+        return "remove obsolete files"
+    return "update changed files"
+
+
 def normalize_summary(summary: str) -> str:
     cleaned = re.sub(r"\s+", " ", summary).strip()
     cleaned = cleaned.rstrip(".!")
@@ -152,6 +227,10 @@ def infer_commit_type(summary: str, files: list[ChangedFile]) -> str:
         if keyword in lowered:
             return commit_type
 
+    new_skill_paths = [item for item in files if item.path.startswith("skills/rightcode-") and ("?" in status_flags(item.code) or "A" in status_flags(item.code))]
+    if new_skill_paths:
+        return "feat"
+
     paths = [item.path.lower() for item in files]
     if paths and all(path.endswith((".md", ".mdx", ".txt")) or "docs/" in path for path in paths):
         return "docs"
@@ -167,6 +246,16 @@ def infer_commit_type(summary: str, files: list[ChangedFile]) -> str:
 def infer_scope(files: list[ChangedFile]) -> str | None:
     if not files:
         return None
+    skill_dirs = {
+        item.path_obj.parts[1]
+        for item in files
+        if len(item.path_obj.parts) >= 2 and item.path_obj.parts[0] == "skills" and item.path_obj.parts[1].startswith("rightcode-")
+    }
+    if len(skill_dirs) == 1:
+        scope = next(iter(skill_dirs)).removeprefix("rightcode-").lower()
+        sanitized = re.sub(r"[^a-z0-9_-]+", "-", scope).strip("-")
+        return sanitized or None
+
     scopes: set[str] = set()
     for item in files:
         parts = Path(item.path).parts
@@ -213,6 +302,17 @@ def print_change_summary(files: list[ChangedFile]) -> None:
         print(f"  {item.code} {item.path}")
 
 
+def choose_subject(suggested_subject: str, assume_yes: bool) -> str:
+    if assume_yes:
+        return suggested_subject
+    choice = prompt("Accept subject, edit it, or cancel? [accept/edit/cancel]", "accept").lower()
+    if choice == "cancel":
+        raise KeyboardInterrupt
+    if choice == "edit":
+        return prompt("Enter commit subject", suggested_subject)
+    return suggested_subject
+
+
 def stage_all(repo: Path) -> None:
     run_git(repo, "add", "-A")
 
@@ -247,6 +347,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--remote", help="Remote name to push to")
     parser.add_argument("--no-push", action="store_true", help="Commit locally only")
     parser.add_argument("--dry-run", action="store_true", help="Preview actions without changing git state")
+    parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmations and use the generated subject automatically")
     return parser.parse_args()
 
 
@@ -261,27 +362,22 @@ def main() -> int:
 
         summary_seed = args.message or " ".join(args.summary).strip()
         if not summary_seed:
-            summary_seed = prompt("Enter a short summary for this change")
+            summary_seed = derive_summary_from_files(files)
 
         branch = current_branch(repo)
         remotes = list_remotes(repo)
         selected_remote = None if args.no_push else choose_remote(remotes, args.remote)
-        subject = build_commit_subject(summary_seed, files)
+        suggested_subject = build_commit_subject(summary_seed, files)
         body = build_commit_body(files)
 
         print(f"Repository: {repo}")
         print(f"Branch: {branch}")
         print_change_summary(files)
-        print(f"Suggested commit subject: {subject}")
+        print(f"Suggested commit subject: {suggested_subject}")
         if body:
             print(body)
 
-        choice = prompt("Accept subject, edit it, or cancel? [accept/edit/cancel]", "accept").lower()
-        if choice == "cancel":
-            print("Cancelled.")
-            return 1
-        if choice == "edit":
-            subject = prompt("Enter commit subject", subject)
+        subject = choose_subject(suggested_subject, args.yes)
 
         if args.dry_run:
             if selected_remote:
@@ -290,7 +386,7 @@ def main() -> int:
                 print("Dry run: no remote push would happen.")
             return 0
 
-        if not confirm("Stage all changes and create the commit?", True):
+        if not args.yes and not confirm("Stage all changes and create the commit?", True):
             print("Cancelled.")
             return 1
 
@@ -310,7 +406,7 @@ def main() -> int:
             print("Detached HEAD detected. Commit was created locally; skipping push.")
             return 0
 
-        if not confirm(f"Push to remote '{selected_remote}' on branch '{branch}'?", True):
+        if not args.yes and not confirm(f"Push to remote '{selected_remote}' on branch '{branch}'?", True):
             print("Push skipped. Commit remains local.")
             return 0
 
