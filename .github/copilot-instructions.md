@@ -23,6 +23,12 @@ scripts/
 
 Each skill folder name **must** be prefixed with `rightcode-` and match the `name` field in the SKILL.md frontmatter.
 
+Every new skill **must** also be added to `.claude-plugin/plugin.json` under the `skills` array:
+
+```json
+"./skills/rightcode-<name>"
+```
+
 ---
 
 ## Creating a skill

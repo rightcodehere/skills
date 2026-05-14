@@ -15,6 +15,7 @@
     "./skills/rightcode-codeprobe-testing",
     "./skills/rightcode-diagnose",
     "./skills/rightcode-find-skills",
+    "./skills/rightcode-git-commit-push",
     "./skills/rightcode-git-guardrails",
     "./skills/rightcode-grill-me",
     "./skills/rightcode-grill-with-docs",
