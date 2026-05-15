@@ -12,6 +12,21 @@ npx skills add rightcodehere/skills
 
 Pick the skills you want, select which agents to install them on. Done.
 
+## Local Skill Validation
+
+This repo includes local quality gates for skill authoring consistency.
+
+```bash
+# validate all skills
+npm run skills:validate
+
+# validate only staged changed skills
+npm run skills:validate:staged
+```
+
+Pre-commit uses Husky and runs `npm run skills:validate:staged`.
+Warnings are non-blocking; errors block commit.
+
 ---
 
 ## Skill Reference
@@ -48,6 +63,7 @@ All skills are prefixed with `rightcode-` to avoid conflicts with other skill pa
 | `/rightcode-zoom-out` | Get a higher-level map of relevant modules and callers in unfamiliar code |
 | `/rightcode-prototype` | Build a throwaway prototype — terminal app for logic, or UI variations for design |
 | `/rightcode-setup-skills` | Scaffold per-repo config (issue tracker, triage labels, domain docs) once per repo |
+| `/rightcode-setup-context-repo` | Create and maintain a dedicated multi-repo context repository with CONTEXT/ARCHITECTURE docs, standards, and Copilot instruction sync |
 
 ### Productivity
 

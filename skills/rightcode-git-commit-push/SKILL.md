@@ -9,6 +9,12 @@ argument-hint: "[optional short summary]"
 
 Runs a bundled Python script so the commit and push flow happens locally in the user's shell instead of spending tokens on diff analysis.
 
+Execution rules:
+- Run the bundled Python script directly from the repo root or with `--repo`.
+- Do not add planning text, tool-selection narration, or a fabricated execution transcript before running it.
+- After the script finishes, report only the concrete outcome from the local command.
+- If the user asked to commit only, pass `--no-push`.
+
 The script:
 - detects the current git repo automatically
 - inspects changed and untracked files

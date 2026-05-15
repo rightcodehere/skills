@@ -29,7 +29,13 @@
     "skills/**"
   ],
   "scripts": {
-    "test:local": "pwsh -File scripts/test-local.ps1"
+    "test:local": "pwsh -File scripts/test-local.ps1",
+    "skills:validate": "python scripts/validate-skills.py --mode all",
+    "skills:validate:staged": "python scripts/validate-skills.py --mode staged",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
   },
   "publishConfig": {
     "access": "public"

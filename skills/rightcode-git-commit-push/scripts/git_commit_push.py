@@ -144,6 +144,25 @@ def summarize_target_name(path: str) -> str:
     return Path(path).stem.replace("-", " ").replace("_", " ")
 
 
+def summarize_single_skill_change(skill_dir: str, files: list[ChangedFile], added: list[ChangedFile], deleted: list[ChangedFile], modified: list[ChangedFile]) -> str:
+    skill_name = skill_dir.removeprefix("rightcode-").replace("-", " ")
+    relative_paths = ["/".join(item.path_obj.parts[2:]) for item in files if len(item.path_obj.parts) >= 3]
+    touches_skill_md = any(path == "SKILL.md" for path in relative_paths)
+    touches_scripts = any(path.startswith("scripts/") for path in relative_paths)
+
+    if added and not modified and not deleted:
+        return f"add {skill_name} skill"
+    if deleted and not added and not modified:
+        return f"remove {skill_name} skill"
+    if touches_skill_md and touches_scripts:
+        return f"update {skill_name} skill implementation"
+    if touches_skill_md:
+        return f"update {skill_name} skill instructions"
+    if touches_scripts:
+        return f"update {skill_name} skill script"
+    return f"update {skill_name} skill"
+
+
 def derive_summary_from_files(files: list[ChangedFile]) -> str:
     paths = unique_paths(files)
     added = [item for item in files if "?" in status_flags(item.code) or "A" in status_flags(item.code)]
@@ -168,12 +187,7 @@ def derive_summary_from_files(files: list[ChangedFile]) -> str:
         }
     )
     if len(changed_skill_dirs) == 1:
-        action = "update"
-        if added and not modified and not deleted:
-            action = "add"
-        elif deleted and not added and not modified:
-            action = "remove"
-        return f"{action} {changed_skill_dirs[0].removeprefix('rightcode-').replace('-', ' ')} skill"
+        return summarize_single_skill_change(changed_skill_dirs[0], files, added, deleted, modified)
 
     top_level = sorted({Path(path).parts[0] for path in paths if Path(path).parts})
     if len(top_level) == 1:
@@ -224,7 +238,8 @@ def infer_commit_type(summary: str, files: list[ChangedFile]) -> str:
         "implement": "feat",
     }
     for keyword, commit_type in keyword_map.items():
-        if keyword in lowered:
+        pattern = rf"\b{re.escape(keyword)}(?:s|ed|ing)?\b"
+        if re.search(pattern, lowered):
             return commit_type
 
     new_skill_paths = [item for item in files if item.path.startswith("skills/rightcode-") and ("?" in status_flags(item.code) or "A" in status_flags(item.code))]

@@ -26,6 +26,7 @@
     "./skills/rightcode-scaffold-exercises",
     "./skills/rightcode-session-summary-prompt",
     "./skills/rightcode-setup-pre-commit",
+    "./skills/rightcode-setup-context-repo",
     "./skills/rightcode-setup-skills",
     "./skills/rightcode-tdd",
     "./skills/rightcode-to-issues",
