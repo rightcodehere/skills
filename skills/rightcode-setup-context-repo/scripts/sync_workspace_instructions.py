@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-way sync: context repo copilot-instructions.md -> workspace root."""
+"""One-way sync: context repo copilot-instructions.md -> workspace .github folder."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from pathlib import Path
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Copy the context repository copilot-instructions.md to the workspace root "
-            "as a one-way sync operation."
+            "Copy the context repository copilot-instructions.md to the workspace "
+            ".github folder as a one-way sync operation."
         )
     )
     parser.add_argument(
@@ -35,7 +35,7 @@ def main() -> int:
     workspace_root = Path(args.workspace_root).resolve()
 
     source = context_repo / "copilot-instructions.md"
-    target = workspace_root / "copilot-instructions.md"
+    target = workspace_root / ".github" / "copilot-instructions.md"
 
     if not source.exists():
         print(f"ERROR: Source file not found: {source}")

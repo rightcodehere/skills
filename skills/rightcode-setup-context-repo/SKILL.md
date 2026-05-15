@@ -183,7 +183,7 @@ Create `<context-repo>/scripts/sync_workspace_instructions.py`.
 Behavior:
 
 - source: `<context-repo>/copilot-instructions.md`
-- target: `<workspace-root>/copilot-instructions.md`
+- target: `<workspace-root>/.github/copilot-instructions.md`
 - one-way copy (context repo is source of truth)
 - create target if missing
 - overwrite target on each run
