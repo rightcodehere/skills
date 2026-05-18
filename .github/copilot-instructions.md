@@ -8,7 +8,7 @@ This repo is the source for the `@rightcode/skills` npm package — a collection
 
 ```
 skills/
-  rightcode-<name>/
+  rc-<name>/
     SKILL.md          # required — main skill instructions
     *.md              # optional reference/example files
     scripts/          # optional utility scripts (Python only — see below)
@@ -21,22 +21,22 @@ scripts/
     publish.yml       # CI publish on git tag push
 ```
 
-Each skill folder name **must** be prefixed with `rightcode-` and match the `name` field in the SKILL.md frontmatter.
+Each skill folder name **must** be prefixed with `rc-` and match the `name` field in the SKILL.md frontmatter.
 
 Every new skill **must** also be added to `.claude-plugin/plugin.json` under the `skills` array:
 
 ```json
-"./skills/rightcode-<name>"
+"./skills/rc-<name>"
 ```
 
 ---
 
 ## Creating a skill
 
-Use the `rightcode-write-a-skill` skill as the starting point. The minimum required structure is:
+Use the `rc-write-a-skill` skill as the starting point. The minimum required structure is:
 
 ```
-skills/rightcode-<name>/
+skills/rc-<name>/
   SKILL.md
 ```
 
@@ -44,7 +44,7 @@ skills/rightcode-<name>/
 
 ```yaml
 ---
-name: rightcode-<name>
+name: rc-<name>
 description: <what it does>. Use when <specific triggers / keywords>.
 ---
 ```
@@ -76,12 +76,12 @@ Any utility scripts bundled inside a skill's `scripts/` folder **must be written
 
 ```
 # Correct
-skills/rightcode-<name>/scripts/helper.py
+skills/rc-<name>/scripts/helper.py
 
 # Not allowed
-skills/rightcode-<name>/scripts/helper.sh
-skills/rightcode-<name>/scripts/helper.ps1
-skills/rightcode-<name>/scripts/helper.bat
+skills/rc-<name>/scripts/helper.sh
+skills/rc-<name>/scripts/helper.ps1
+skills/rc-<name>/scripts/helper.bat
 ```
 
 Scripts in the top-level `scripts/` folder (repo tooling, not skill content) are exempt — those are PowerShell because they only run on the maintainer's machine.
@@ -94,16 +94,16 @@ Use `test-local.ps1` to copy skills directly into `~/.agents/skills/` where VS C
 
 ```powershell
 # Install a single skill
-.\scripts\test-local.ps1 rightcode-tdd
+.\scripts\test-local.ps1 rc-tdd
 
 # Install multiple skills
-.\scripts\test-local.ps1 rightcode-tdd rightcode-diagnose
+.\scripts\test-local.ps1 rc-tdd rc-diagnose
 
 # Install all skills
 .\scripts\test-local.ps1
 
 # Via npm script
-npm run test:local -- rightcode-tdd
+npm run test:local -- rc-tdd
 ```
 
 After running the script, reload VS Code (open a new chat) to pick up the changes. Iterate until the skill behaves correctly before moving to publish.

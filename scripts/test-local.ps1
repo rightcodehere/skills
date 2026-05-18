@@ -1,8 +1,8 @@
 # test-local.ps1 — Copy one or more skills to ~/.agents/skills/ and ~/.bob/skills/ for local testing
 # Usage:
 #   .\scripts\test-local.ps1                          # installs ALL skills
-#   .\scripts\test-local.ps1 rightcode-tdd            # installs one skill
-#   .\scripts\test-local.ps1 rightcode-tdd rightcode-diagnose  # installs multiple skills
+#   .\scripts\test-local.ps1 rc-tdd            # installs one skill
+#   .\scripts\test-local.ps1 rc-tdd rc-diagnose  # installs multiple skills
 
 param(
     [Parameter(ValueFromRemainingArguments = $true)]
