@@ -1,6 +1,6 @@
 {
   "name": "@rightcode/skills",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "RightCode agent skills collection — 31 battle-tested skills for real engineering teams. Works with Claude Code, GitHub Copilot, Cursor, Codex, IBM Bob, and 50+ agents. by https://rightcode.app",
   "keywords": [
     "agent-skills",
