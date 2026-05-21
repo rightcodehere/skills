@@ -128,6 +128,106 @@ _Avoid_: always-on strict blocking, unavailable strict mode
 Re-run behavior that updates generated artifacts in place while preserving manual edits where possible.
 _Avoid_: destructive full regenerate, prompt-per-file overwrite loops
 
+**Orchestrator Agent**:
+A distributable agent role that coordinates workflow by invoking multiple specialized skills or agents.
+_Avoid_: master prompt, generic assistant
+
+**Specialist Agent**:
+A distributable agent role scoped to one domain capability and invoked directly or via an Orchestrator Agent.
+_Avoid_: random helper, one-off bot
+
+**Agent Distribution Unit**:
+The packaged set of agent definitions shipped to a team for installation and consistent use.
+_Avoid_: local prompt folder, personal setup
+
+**Skill Dependency**:
+An explicit reliance by an agent on one or more installed skills for core behavior.
+_Avoid_: optional tip, incidental reference
+
+**Artifact Separation Policy**:
+The rule that agent packages and skill packages are versioned and released independently even when agents depend on skills.
+_Avoid_: lockstep release, single-bundle-only policy
+
+**Repository Topology Policy**:
+The rule that agent distribution is isolated in a dedicated repository separate from existing skills and legacy agent repos.
+_Avoid_: dual active sources, same-repo coupling with legacy artifacts
+
+**Installation Surface Policy**:
+The rule that skills and agents are installed through separate explicit commands.
+_Avoid_: implicit auto-install chaining, hidden combined installer
+
+**Dependency Enforcement Policy**:
+The rule that agent installation blocks when required skills are missing or below declared minimum versions.
+_Avoid_: silent downgrade, warning-only compatibility checks
+
+**Compatibility Ownership Policy**:
+The rule that the agent package is the source of truth for required minimum skill versions.
+_Avoid_: split ownership, skills-side compatibility matrix ownership
+
+**Breaking Change Gate Policy**:
+The rule that new major versions of required skills are treated as incompatible until the agent package explicitly declares support.
+_Avoid_: optimistic major upgrades, runtime-only validation
+
+**Distribution Audience Policy**:
+The rule that the agent package is published publicly from initial release rather than kept internal-first.
+_Avoid_: private-only launch, delayed public availability by default
+
+**Package Identity Policy**:
+The rule that the agents artifact uses a distinct public package identity from the skills artifact.
+_Avoid_: shared package identity, ambiguous install target
+
+**Agent Package Identity**:
+The selected public identity for the agents artifact, currently expressed as rightcodehere/agents.
+_Avoid_: skills package name reuse, unnamed placeholder
+
+**Identifier Split Policy**:
+The rule that public npm package identity and source repository path are distinct canonical identifiers.
+_Avoid_: single overloaded identifier string, install-path ambiguity
+
+**Agent NPM Identity**:
+The canonical npm package name for agents, set to @rightcode/agents.
+_Avoid_: rightcodehere/agents as npm name, inferred unscoped name
+
+**Agent Repository Path**:
+The canonical source repository path for agents, set to RightCodeAI.
+_Avoid_: superseded repository slugs, mixed identifier usage
+
+**Auto-Install Policy**:
+The rule that agent installation never auto-installs missing skills and instead returns explicit remediation steps.
+_Avoid_: implicit dependency installation, side-effectful installer behavior
+
+**Agent Workspace Layout Policy**:
+The rule that agent artifacts live in a top-level agents/ package with workflow assets maintained alongside as first-class distribution content.
+_Avoid_: nesting agents under skills/, hidden workflow asset locations
+
+**Workflow Artifact Boundary Policy**:
+The rule that distributable workflow templates live under agents/workflows while .github/workflows remains reserved for CI automation.
+_Avoid_: mixing distributable templates into CI workflow folders, split ownership of templates
+
+**Source of Truth Policy**:
+The rule that RightCodeAI is the only active source for agent and workflow distribution changes.
+_Avoid_: mirrored editing across repos, ambiguous ownership
+
+**Legacy Freeze Policy**:
+The rule that RightSkills and ramukaka remain unchanged for ongoing agent/workflow evolution except optional pointer documentation.
+_Avoid_: continued feature edits in legacy repos, parallel release streams
+
+**Baseline Migration Policy**:
+The rule that existing ramukaka agent, workflow template, and governance artifacts are copied into RightCodeAI as the initial starting point.
+_Avoid_: blank-slate rewrite without carry-over, governance-doc omission, unmanaged cherry-pick migration
+
+**Cutover Sync Policy**:
+The rule that migration uses a one-time snapshot with no temporary bidirectional or rolling sync.
+_Avoid_: transitional mirroring, delayed ownership transfer
+
+**Release Ownership Policy**:
+The rule that publish authority for the agents package is restricted to a small designated maintainer group.
+_Avoid_: open publish access, ad-hoc release permissions
+
+**Release Channel Policy**:
+The rule that the agents package is published directly to the latest channel at launch instead of staged prerelease tags.
+_Avoid_: mandatory beta-first channeling, implicit prerelease gating
+
 ## Relationships
 
 - A **Skill Definition** is evaluated by **Skill Authoring Quality**
@@ -157,6 +257,29 @@ _Avoid_: destructive full regenerate, prompt-per-file overwrite loops
 - **Soft Enforcement** is the default enforcement mode for context maintenance
 - **Hard Enforcement Option** can be enabled without changing the default
 - **Idempotent Regeneration** governs safe re-runs of context generation
+- An **Orchestrator Agent** coordinates one or more **Specialist Agent** items
+- A **Specialist Agent** can declare one or more **Skill Dependency** items
+- An **Agent Distribution Unit** can include both **Orchestrator Agent** and **Specialist Agent** items
+- **Artifact Separation Policy** governs how an **Agent Distribution Unit** versions against its **Skill Dependency** set
+- **Repository Topology Policy** constrains where independently versioned artifacts are maintained
+- **Installation Surface Policy** governs operator-facing install commands for skills versus agents
+- **Dependency Enforcement Policy** validates **Skill Dependency** requirements at agent install time
+- **Compatibility Ownership Policy** assigns manifest ownership for **Skill Dependency** version requirements
+- **Breaking Change Gate Policy** constrains major-version upgrade behavior under **Dependency Enforcement Policy**
+- **Distribution Audience Policy** constrains release visibility and onboarding requirements for agent artifacts
+- **Package Identity Policy** governs external naming clarity between skills and agents artifacts
+- **Agent Package Identity** implements **Package Identity Policy** for the agents artifact
+- **Identifier Split Policy** governs canonical mapping between package registry identity and source repository path
+- **Agent NPM Identity** and **Agent Repository Path** implement **Identifier Split Policy**
+- **Auto-Install Policy** constrains dependency remediation behavior under **Dependency Enforcement Policy**
+- **Agent Workspace Layout Policy** implements **Repository Topology Policy** at directory-structure level
+- **Workflow Artifact Boundary Policy** refines **Agent Workspace Layout Policy** for template placement
+- **Source of Truth Policy** defines canonical edit and release ownership
+- **Legacy Freeze Policy** constrains post-cutover changes in prior repositories
+- **Baseline Migration Policy** defines initial content population strategy for the new source repository
+- **Cutover Sync Policy** defines transition mechanics from baseline migration to steady-state ownership
+- **Release Ownership Policy** governs who can publish the agents package
+- **Release Channel Policy** governs which distribution channel receives initial public releases
 
 ## Example dialogue
 
@@ -194,3 +317,26 @@ _Avoid_: destructive full regenerate, prompt-per-file overwrite loops
 - Instruction ownership resolved: **Workspace Instruction Source** stays in context repo with one-way **Instruction Sync Policy**.
 - Enforcement resolved: default to **Soft Enforcement** with optional **Hard Enforcement Option**.
 - Re-run behavior resolved: apply **Idempotent Regeneration** rather than destructive regeneration.
+- Language resolved: "agents" in this discussion means distributable team agents, split into **Orchestrator Agent** and **Specialist Agent** roles with explicit **Skill Dependency**.
+- Packaging resolved: adopt **Artifact Separation Policy** so agent distribution versions independently from skill packages.
+- Topology superseded: same-repo distribution was replaced by isolation in a dedicated repository under **Repository Topology Policy**.
+- Installation resolved: apply **Installation Surface Policy** with separate install commands for skills and agents.
+- Compatibility resolved: enforce **Dependency Enforcement Policy** with hard-fail behavior for missing or incompatible skills.
+- Ownership resolved: apply **Compatibility Ownership Policy** with agent package as compatibility source of truth.
+- Upgrade safety resolved: apply **Breaking Change Gate Policy** by blocking new skill majors until explicit agent compatibility release.
+- Audience resolved: adopt **Distribution Audience Policy** with public distribution from day one.
+- Naming resolved: adopt **Package Identity Policy** with agent identity set to **Agent Package Identity** = rightcodehere/agents.
+- Identifier resolved: apply **Identifier Split Policy** with **Agent NPM Identity** = @rightcode/agents and **Agent Repository Path** = rightcodehere/agents.
+- Repository identity superseded: **Agent Repository Path** now resolves to RightCodeAI as canonical source-of-truth repo.
+- Naming continuity resolved: retain **Agent NPM Identity** = @rightcode/agents while repository metadata points to RightCodeAI.
+- Remediation resolved: enforce **Auto-Install Policy** with fail-only behavior and explicit install instructions.
+- Layout resolved: apply **Agent Workspace Layout Policy** with a top-level agents/ package and explicit workflow assets.
+- Reference pattern confirmed: existing ramukaka layout uses .github/agents plus .github/workflows-templates as the source model.
+- Workflow placement resolved: apply **Workflow Artifact Boundary Policy** with distributable templates in agents/workflows.
+- Cutover resolved: apply **Source of Truth Policy** with RightCodeAI as canonical repository for agent/workflow evolution.
+- Legacy handling resolved: apply **Legacy Freeze Policy** to keep RightSkills and ramukaka unchanged except optional migration pointers.
+- Migration resolved: apply **Baseline Migration Policy** by importing ramukaka agent/workflow assets as the starting baseline.
+- Migration scope resolved: include governance assets (policy, capability matrix, registry) in the **Baseline Migration Policy** copy set.
+- Transition resolved: apply **Cutover Sync Policy** with one-time copy and immediate no-sync steady state.
+- Release control resolved: apply **Release Ownership Policy** with limited publish authority.
+- Channel resolved: apply **Release Channel Policy** with direct publish to latest.
