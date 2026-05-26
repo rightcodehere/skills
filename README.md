@@ -1,6 +1,6 @@
 # RightSkills
 
-> 31 battle-tested agent skills for real engineering teams.
+> 46 battle-tested agent skills for real engineering teams.
 
 Works with any agent that supports the [open skills ecosystem](https://skills.sh/): Claude Code, GitHub Copilot, Cursor, Codex, Windsurf, Cline, IBM Bob, and 50+ more.
 
@@ -76,11 +76,43 @@ All skills are prefixed with `rc-` to avoid conflicts with other skill packages.
 | `/rc-find-skills` | Discover and install skills from the open skills ecosystem |
 | `/rc-session-summary-prompt` | Generate a ready-to-paste handoff prompt to continue work in a new clean session |
 
-### Utilities & Setup
+### Infrastructure & DevOps
 
 | Skill | Description |
 |-------|-------------|
+| `/rc-docker` | Optimize Docker images with multi-stage builds, distroless bases, BuildKit, multi-arch builds, and security hardening |
+| `/rc-kubernetes` | Deploy and manage Kubernetes — Deployments, Services, Gateway API, service mesh, networking, autoscaling, security |
+| `/rc-terraform` | Infrastructure as code with Terraform — modules, remote state, Stacks, test framework, preconditions/postconditions |
+| `/rc-neon-postgres` | Set up and manage Neon PostgreSQL for serverless Postgres workloads |
+
+### Frontend & Component Development
+
+| Skill | Description |
+|-------|-------------|
+| `/rc-component-forge` | Design and build reusable UI components with accessibility and performance |
+| `/rc-design` | Design system guidance and implementation for consistent UX/UI |
+| `/rc-responsive-engine` | Build responsive, mobile-first layouts with modern CSS techniques |
+
+### Testing & Performance
+
+| Skill | Description |
+|-------|-------------|
+| `/rc-test-commander` | Manage and execute complex test suites with reporting and analysis |
+| `/rc-performance-profiler` | Profile and optimize application performance — CPU, memory, network, rendering |
+
+### Git & Workflow Utilities
+
+| Skill | Description |
+|-------|-------------|
+| `/rc-git-commit-push` | Streamlined commit and push workflow with safety checks and conventional commits |
+| `/rc-git-workflow` | Full git workflow management — branches, rebasing, conflict resolution, history cleanup |
 | `/rc-git-guardrails` | Set up Claude Code hooks to block dangerous git commands before they execute |
+| `/rc-skill-updater` | Keep installed skills up-to-date with automatic version checking and updates |
+
+### Setup & Initialization
+
+| Skill | Description |
+|-------|-------------|
 | `/rc-setup-pre-commit` | Set up Husky pre-commit hooks with lint-staged, Prettier, typecheck, and tests |
 | `/rc-scaffold-exercises` | Create exercise directory structures with sections, problems, solutions, explainers |
 | `/rc-migrate-to-shoehorn` | Migrate test `as` type assertions to `@total-typescript/shoehorn` |
