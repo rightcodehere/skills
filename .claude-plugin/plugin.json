@@ -46,6 +46,7 @@
     "./skills/rc-triage",
     "./skills/rc-write-a-skill",
     "./skills/rc-zoom-out",
-    "./skills/rc-skill-updater"
+    "./skills/rc-skill-updater",
+    "./skills/rc-dltx-create-presentation"
   ]
 }
