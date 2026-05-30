@@ -190,10 +190,7 @@ Consult the appropriate detailed guide based on the code language being reviewed
 | **Kotlin / Android** | [Kotlin Guide](reference/kotlin.md) | Coroutines, Flow, Jetpack Compose, Null Safety, Memory Leaks, Architecture Patterns |
 | **NestJS** | [NestJS Guide](reference/nestjs.md) | Dependency Injection, Layered Architecture, DTO Validation, Guard/Interceptor, Circular Dependencies |
 | **Svelte / SvelteKit** | [Svelte Guide](reference/svelte.md) | Runes, Load Functions, Form Actions, Store Migration, SSR/CSR Boundary |
-| **C** | [C Guide](reference/c.md) | Pointer/Buffer, Memory Safety, UB, Error Handling |
-| **C++** | [C++ Guide](reference/cpp.md) | RAII, Lifetime, Rule of 0/3/5, Exception Safety |
 | **CSS/Less/Sass** | [CSS Guide](reference/css-less-sass.md) | Variable Conventions, !important, Performance Optimization, Responsive, Compatibility |
-| **Qt** | [Qt Guide](reference/qt.md) | Object Model, Signals/Slots, Memory Management, Thread Safety, Performance |
 
 ## Cross-Cutting Guides
 
@@ -210,5 +207,3 @@ Language-agnostic patterns applicable to all code reviews:
 - [Common Bugs Checklist](reference/common-bugs-checklist.md) - Common bugs checklist organized by language
 - [Security Review Guide](reference/security-review-guide.md) - Security review guide
 - [Code Review Best Practices](reference/code-review-best-practices.md) - Code review best practices
-- [PR Review Template](assets/pr-review-template.md) - PR review comment template
-- [Review Checklist](assets/review-checklist.md) - Quick reference checklist
