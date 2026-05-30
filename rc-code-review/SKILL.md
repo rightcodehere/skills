@@ -10,8 +10,8 @@ allowed-tools:
   - Read
   - Grep
   - Glob
-  - Bash      # 运行 lint/test/build 命令验证代码质量
-  - WebFetch  # 查阅最新文档和最佳实践
+  - Bash      # Run lint/test/build commands to verify code quality
+  - WebFetch  # Consult latest documentation and best practices
 ---
 
 # Code Review Excellence
@@ -172,25 +172,28 @@ Use labels to indicate priority:
 
 ## Language-Specific Guides
 
-根据审查的代码语言，查阅对应的详细指南：
+Consult the appropriate detailed guide based on the code language being reviewed:
 
 | Language/Framework | Reference File | Key Topics |
 |-------------------|----------------|------------|
+|-------------------|----------------|------------|
 | **React** | [React Guide](reference/react.md) | Hooks, useEffect, React 19 Actions, RSC, Suspense, TanStack Query v5 |
-| **Vue 3** | [Vue Guide](reference/vue.md) | Composition API, 响应性系统, Props/Emits, Watchers, Composables |
-| **Angular 17+** | [Angular Guide](reference/angular.md) | Signals, Standalone 组件, RxJS, Zoneless 变更检测, 模板优化 |
-| **Rust** | [Rust Guide](reference/rust.md) | 所有权/借用, Unsafe 审查, 异步代码, 取消安全性, 错误处理 |
-| **TypeScript** | [TypeScript Guide](reference/typescript.md) | 类型安全, async/await, 不可变性 |
-| **Python** | [Python Guide](reference/python.md) | 可变默认参数, 异常处理, 类属性 |
-| **Django / DRF** | [Django Guide](reference/django.md) | 安全审查, N+1 查询, Serializer 反模式, ViewSet, 异步视图 |
-| **Java** | [Java Guide](reference/java.md) | Java 17/21 新特性, Spring Boot 3, 虚拟线程, Stream/Optional |
-| **C# / .NET** | [C# Guide](reference/csharp.md) | C# 12 特性, 异步编程, EF Core 性能, ASP.NET Core, LINQ |
-| **Go** | [Go Guide](reference/go.md) | 错误处理, goroutine/channel, context, 接口设计 |
-| **Kotlin / Android** | [Kotlin Guide](reference/kotlin.md) | 协程, Flow, Jetpack Compose, 空安全, 内存泄漏, 架构模式 |
-| **NestJS** | [NestJS Guide](reference/nestjs.md) | 依赖注入, 分层架构, DTO 验证, Guard/Interceptor, 循环依赖 |
-| **Svelte / SvelteKit** | [Svelte Guide](reference/svelte.md) | Runes, Load 函数, Form Actions, Store 迁移, SSR/CSR 边界 |
-
-| **CSS/Less/Sass** | [CSS Guide](reference/css-less-sass.md) | 变量规范, !important, 性能优化, 响应式, 兼容性 |
+| **Vue 3** | [Vue Guide](reference/vue.md) | Composition API, Reactivity System, Props/Emits, Watchers, Composables |
+| **Angular 17+** | [Angular Guide](reference/angular.md) | Signals, Standalone Components, RxJS, Zoneless Change Detection, Template Optimization |
+| **Rust** | [Rust Guide](reference/rust.md) | Ownership/Borrowing, Unsafe Review, Async Code, Cancellation Safety, Error Handling |
+| **TypeScript** | [TypeScript Guide](reference/typescript.md) | Type Safety, async/await, Immutability |
+| **Python** | [Python Guide](reference/python.md) | Mutable Default Arguments, Exception Handling, Class Attributes |
+| **Django / DRF** | [Django Guide](reference/django.md) | Security Review, N+1 Queries, Serializer Anti-Patterns, ViewSet, Async Views |
+| **Java** | [Java Guide](reference/java.md) | Java 17/21 Features, Spring Boot 3, Virtual Threads, Stream/Optional |
+| **C# / .NET** | [C# Guide](reference/csharp.md) | C# 12 Features, Async Programming, EF Core Performance, ASP.NET Core, LINQ |
+| **Go** | [Go Guide](reference/go.md) | Error Handling, goroutine/channel, context, Interface Design |
+| **Kotlin / Android** | [Kotlin Guide](reference/kotlin.md) | Coroutines, Flow, Jetpack Compose, Null Safety, Memory Leaks, Architecture Patterns |
+| **NestJS** | [NestJS Guide](reference/nestjs.md) | Dependency Injection, Layered Architecture, DTO Validation, Guard/Interceptor, Circular Dependencies |
+| **Svelte / SvelteKit** | [Svelte Guide](reference/svelte.md) | Runes, Load Functions, Form Actions, Store Migration, SSR/CSR Boundary |
+| **C** | [C Guide](reference/c.md) | Pointer/Buffer, Memory Safety, UB, Error Handling |
+| **C++** | [C++ Guide](reference/cpp.md) | RAII, Lifetime, Rule of 0/3/5, Exception Safety |
+| **CSS/Less/Sass** | [CSS Guide](reference/css-less-sass.md) | Variable Conventions, !important, Performance Optimization, Responsive, Compatibility |
+| **Qt** | [Qt Guide](reference/qt.md) | Object Model, Signals/Slots, Memory Management, Thread Safety, Performance |
 
 ## Cross-Cutting Guides
 
@@ -202,8 +205,10 @@ Language-agnostic patterns applicable to all code reviews:
 
 ## Additional Resources
 
-- [Architecture Review Guide](reference/architecture-review-guide.md) - 架构设计审查指南（SOLID、反模式、耦合度）
-- [Performance Review Guide](reference/performance-review-guide.md) - 性能审查指南（Web Vitals、N+1、复杂度）
-- [Common Bugs Checklist](reference/common-bugs-checklist.md) - 按语言分类的常见错误清单
-- [Security Review Guide](reference/security-review-guide.md) - 安全审查指南
-- [Code Review Best Practices](reference/code-review-best-practices.md) - 代码审查最佳实践
+- [Architecture Review Guide](reference/architecture-review-guide.md) - Architecture design review guide (SOLID, anti-patterns, coupling)
+- [Performance Review Guide](reference/performance-review-guide.md) - Performance review guide (Web Vitals, N+1, complexity)
+- [Common Bugs Checklist](reference/common-bugs-checklist.md) - Common bugs checklist organized by language
+- [Security Review Guide](reference/security-review-guide.md) - Security review guide
+- [Code Review Best Practices](reference/code-review-best-practices.md) - Code review best practices
+- [PR Review Template](assets/pr-review-template.md) - PR review comment template
+- [Review Checklist](assets/review-checklist.md) - Quick reference checklist

@@ -1,25 +1,25 @@
 # C# / .NET Code Review Guide
 
-> C# / .NET 8 代码审查指南，覆盖 C# 12 新特性、异步编程、EF Core 性能、ASP.NET Core 最佳实践、依赖注入、LINQ 等核心主题。
+> C# / .NET 8 ， C# 12 、、EF Core 、ASP.NET Core 、、LINQ 。
 
-## 目录
+## 
 
-- [C# 12 新特性](#c-12-新特性)
-- [异步编程](#异步编程)
-- [EF Core 性能](#ef-core-性能)
-- [ASP.NET Core 最佳实践](#aspnet-core-最佳实践)
-- [依赖注入](#依赖注入)
-- [LINQ 最佳实践](#linq-最佳实践)
+- [C# 12 ](#c-12-)
+- [](#)
+- [EF Core ](#ef-core-)
+- [ASP.NET Core ](#aspnet-core-)
+- [](#)
+- [LINQ ](#linq-)
 - [Review Checklist](#review-checklist)
 
 ---
 
-## C# 12 新特性
+## C# 12 
 
-### Primary Constructors（非 record 类型）
+### Primary Constructors（ record ）
 
 ```csharp
-// ❌ 样板代码过多的传统构造函数
+// ❌ 
 public class ProductService
 {
     private readonly ProductDbContext _db;
@@ -32,69 +32,69 @@ public class ProductService
     }
 }
 
-// ✅ Primary Constructor——简洁的依赖注入
+// ✅ Primary Constructor——
 public class ProductService(ProductDbContext db, ILogger<ProductService> logger)
 {
     public async Task<Product?> GetAsync(int id)
         => await db.Products.FindAsync(id);
 }
 
-// ⚠️ 注意：primary constructor 参数不是属性，不能被重新赋值
-// ⚠️ 如果需要长期存储，显式声明字段
+// ⚠️ ：primary constructor ，
+// ⚠️ ，
 public class OrderService(OrderDbContext db)
 {
-    private readonly OrderDbContext _db = db; // 显式捕获
+    private readonly OrderDbContext _db = db; // 
 }
 ```
 
 ### Collection Expressions
 
 ```csharp
-// ❌ 传统集合初始化
+// ❌ 
 int[] nums = new int[] { 1, 2, 3 };
 List<string> names = new List<string> { "alice", "bob" };
 
-// ✅ 集合表达式
+// ✅ 
 int[] nums = [1, 2, 3];
 List<string> names = ["alice", "bob"];
 Span<char> span = ['a', 'b'];
 
-// ✅ 展开运算符
+// ✅ 
 int[] merged = [..nums, 4, 5];
 ```
 
 ### Default Lambda Parameters
 
 ```csharp
-// ❌ 重载 lambda
+// ❌  lambda
 var add = (int a, int b) => a + b;
 var addDefault = (int a) => a + 1;
 
-// ✅ 默认参数
+// ✅ 
 var add = (int a, int b = 1) => a + b;
 ```
 
 ---
 
-## 异步编程
+## 
 
-### Task.Wait() / .Result / async void 是严重反模式
+### Task.Wait() / .Result / async void 
 
 ```csharp
-// ❌ Task.Wait() —— 死锁风险（同步阻塞异步操作）
+// ❌ Task.Wait() —— （）
 public ActionResult<Data> Get(int id)
 {
-    var data = _service.GetDataAsync(id).Result; // 死锁！
+    var data = _service.GetDataAsync(id).Result; // ！
     return Ok(data);
 }
 
-// ❌ async void —— 异常无法捕获，会崩溃进程
+// ❌ async void —— ，
 public async void HandleEvent()
 {
-    await _service.ProcessAsync(); // 异常直接崩溃
+    await _service.ProcessAsync(); // 
 }
 
-// ✅ async Task —— 全链路异步
+// ✅ async Task —— 
 public async Task<ActionResult<Data>> Get(int id)
 {
     var data = await _service.GetDataAsync(id);
@@ -102,10 +102,10 @@ public async Task<ActionResult<Data>> Get(int id)
 }
 ```
 
-### ConfigureAwait(false) 用于库代码
+### ConfigureAwait(false) 
 
 ```csharp
-// ❌ 库代码不必要地捕获 SynchronizationContext
+// ❌  SynchronizationContext
 public class LibraryService
 {
     public async Task<string> GetDataAsync()
@@ -115,7 +115,7 @@ public class LibraryService
     }
 }
 
-// ✅ 库代码使用 ConfigureAwait(false) 避免死锁
+// ✅  ConfigureAwait(false) 
 public class LibraryService
 {
     public async Task<string> GetDataAsync()
@@ -126,16 +126,16 @@ public class LibraryService
 }
 ```
 
-### CancellationToken 传播
+### CancellationToken 
 
 ```csharp
-// ❌ 丢弃 CancellationToken
+// ❌  CancellationToken
 public async Task<List<User>> SearchAsync(string query)
 {
     return await _db.Users.Where(u => u.Name.Contains(query)).ToListAsync();
 }
 
-// ✅ 全链路传递 CancellationToken
+// ✅  CancellationToken
 public async Task<List<User>> SearchAsync(string query, CancellationToken ct = default)
 {
     return await _db.Users
@@ -147,12 +147,12 @@ public async Task<List<User>> SearchAsync(string query, CancellationToken ct = d
 ### Async Disposal
 
 ```csharp
-// ❌ 同步 dispose 异步资源
+// ❌  dispose 
 public class DataClient : IDisposable
 {
     public void Dispose()
     {
-        _httpClient.Dispose(); // 可能丢弃正在进行的请求
+        _httpClient.Dispose(); // 
     }
 }
 
@@ -165,27 +165,27 @@ public class DataClient : IAsyncDisposable
     }
 }
 
-// ✅ 调用方使用 await using
+// ✅  await using
 await using var client = new DataClient();
 ```
 
 ---
 
-## EF Core 性能
+## EF Core 
 
-### N+1 查询问题
+### N+1 
 
 ```csharp
-// ❌ 经典 N+1——每个 Blog 触发一次查询获取 Posts
+// ❌  N+1—— Blog  Posts
 foreach (var blog in await context.Blogs.ToListAsync())
 {
-    foreach (var post in blog.Posts) // 每次循环都查询数据库！
+    foreach (var post in blog.Posts) // ！
     {
         Console.WriteLine(post.Title);
     }
 }
 
-// ✅ Eager Loading + 投影
+// ✅ Eager Loading + 
 await foreach (var blog in context.Blogs
     .Select(b => new { b.Url, b.Posts })
     .AsAsyncEnumerable())
@@ -195,27 +195,27 @@ await foreach (var blog in context.Blogs
 }
 ```
 
-### 过度获取（不投影）
+### （）
 
 ```csharp
-// ❌ 加载所有列——只需要 Url 时加载了全部字段
+// ❌ —— Url 
 var urls = await context.Blogs.ToListAsync();
 
-// ✅ 只投影需要的字段
+// ✅ 
 var urls = await context.Blogs
     .Select(b => b.Url)
     .ToListAsync();
 ```
 
-### 缺少分页
+### 
 
 ```csharp
-// ❌ 无界结果集
+// ❌ 
 var posts = await context.Posts
     .Where(p => p.Title.StartsWith("A"))
-    .ToListAsync(); // 可能有百万条记录！
+    .ToListAsync(); // ！
 
-// ✅ 限制结果数量
+// ✅ 
 var posts = await context.Posts
     .Where(p => p.Title.StartsWith("A"))
     .OrderBy(p => p.Id)
@@ -224,16 +224,16 @@ var posts = await context.Posts
     .ToListAsync();
 ```
 
-### Cartesian Explosion（JOIN 笛卡尔爆炸）
+### Cartesian Explosion（JOIN ）
 
 ```csharp
-// ❌ 多个 Include 创建大量重复数据
+// ❌  Include 
 var blogs = await context.Blogs
     .Include(b => b.Posts)
     .Include(b => b.Tags)
-    .ToListAsync(); // 每行重复 Blog 数据
+    .ToListAsync(); //  Blog 
 
-// ✅ 使用 AsSplitQuery 拆分查询
+// ✅  AsSplitQuery 
 var blogs = await context.Blogs
     .Include(b => b.Posts)
     .Include(b => b.Tags)
@@ -241,78 +241,78 @@ var blogs = await context.Blogs
     .ToListAsync();
 ```
 
-### 只读场景缺少 AsNoTracking
+###  AsNoTracking
 
 ```csharp
-// ❌ 默认跟踪——只读查询也付出跟踪开销
+// ❌ ——
 var products = await context.Products.ToListAsync();
 
-// ✅ AsNoTracking——性能提升 ~30%，内存减少 ~40%
+// ✅ AsNoTracking—— ~30%， ~40%
 var products = await context.Products
     .AsNoTracking()
     .ToListAsync();
 ```
 
-### 列上函数阻止索引使用
+### 
 
 ```csharp
-// ✅ 可以使用索引——sargable
+// ✅ ——sargable
 var posts1 = await context.Posts
     .Where(p => p.Title.StartsWith("A"))
     .ToListAsync();
 
-// ❌ 无法使用索引——全表扫描
+// ❌ ——
 var posts2 = await context.Posts
     .Where(p => p.Title.EndsWith("A"))
     .ToListAsync();
 
-// ❌ 列上套函数——全表扫描
+// ❌ ——
 var posts3 = await context.Posts
     .Where(p => p.Title.ToLower() == "foo")
     .ToListAsync();
 ```
 
-### 同步 vs 异步数据库访问
+###  vs 
 
 ```csharp
-// ❌ 同步数据库调用——阻塞线程
+// ❌ ——
 var products = context.Products.ToList();
 context.SaveChanges();
 
-// ✅ 异步数据库调用
+// ✅ 
 var products = await context.Products.ToListAsync();
 await context.SaveChangesAsync();
 ```
 
 ---
 
-## ASP.NET Core 最佳实践
+## ASP.NET Core 
 
-### HttpClient 误用
+### HttpClient 
 
 ```csharp
-// ❌ 每次请求创建新的 HttpClient——socket 耗尽
+// ❌  HttpClient——socket 
 using var client = new HttpClient();
 var response = await client.GetAsync("https://api.example.com/data");
 
-// ✅ IHttpClientFactory 注入
+// ✅ IHttpClientFactory 
 public class MyService
 {
     private readonly HttpClient _client;
-    public MyService(HttpClient client) => _client = client; // 从工厂注入
+    public MyService(HttpClient client) => _client = client; // 
 }
 ```
 
-### HttpContext 在后台线程中使用
+### HttpContext 
 
 ```csharp
-// ❌ 在后台任务中捕获 scoped 服务——请求结束后已释放
+// ❌  scoped ——
 _ = Task.Run(async () =>
 {
     await context.SaveChangesAsync(); // ObjectDisposedException!
 });
 
-// ✅ 创建新的 scope
+// ✅  scope
 _ = Task.Run(async () =>
 {
     await using var scope = serviceScopeFactory.CreateAsyncScope();
@@ -321,20 +321,20 @@ _ = Task.Run(async () =>
 });
 ```
 
-### Request.Form 同步访问
+### Request.Form 
 
 ```csharp
-// ❌ 同步读取 Form——sync over async
+// ❌  Form——sync over async
 var form = HttpContext.Request.Form;
 
-// ✅ 异步读取
+// ✅ 
 var form = await HttpContext.Request.ReadFormAsync();
 ```
 
-### 异常用于控制流
+### 
 
 ```csharp
-// ❌ 用异常判断是否存在——比检查慢 10-100 倍
+// ❌ —— 10-100 
 try
 {
     var user = await _db.Users.FirstAsync(u => u.Id == id);
@@ -344,19 +344,19 @@ catch (InvalidOperationException)
     return NotFound();
 }
 
-// ✅ 使用检查而非异常
+// ✅ 
 var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
 if (user is null) return NotFound();
 ```
 
-### 响应头在 Body 之后设置
+###  Body 
 
 ```csharp
-// ❌ body 已发送后再设置 header——抛异常
+// ❌ body  header——
 await next(context);
-context.Response.Headers["X-Custom"] = "value"; // 可能抛异常！
+context.Response.Headers["X-Custom"] = "value"; // ！
 
-// ✅ 使用 OnStarting 回调
+// ✅  OnStarting 
 context.Response.OnStarting(() =>
 {
     context.Response.Headers["X-Custom"] = "value";
@@ -367,19 +367,19 @@ await next(context);
 
 ---
 
-## 依赖注入
+## 
 
-### Scoped 服务注入 Singleton
+### Scoped  Singleton
 
 ```csharp
-// ❌ Scoped 服务注入 Singleton——生命周期不匹配
+// ❌ Scoped  Singleton——
 services.AddSingleton<BackgroundWorker>();
 services.AddScoped<IUserRepository, UserRepository>();
 
-// BackgroundWorker 是 Singleton，UserRepository 是 Scoped
-// → UserRepository 在多个请求间共享或已释放
+// BackgroundWorker  Singleton，UserRepository  Scoped
+// → UserRepository 
 
-// ✅ 在 Singleton 中通过 IServiceProvider 创建 scope
+// ✅  Singleton  IServiceProvider  scope
 public class BackgroundWorker : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
@@ -397,54 +397,54 @@ public class BackgroundWorker : BackgroundService
 
 ---
 
-## LINQ 最佳实践
+## LINQ 
 
-### ToList 之后再 LINQ
+### ToList  LINQ
 
 ```csharp
-// ❌ 先 ToList 再过滤——全表加载到内存
+// ❌  ToList ——
 var results = context.Posts
     .Where(p => p.Title.StartsWith("A"))
     .ToList()
-    .Where(p => SomeClientFilter(p)); // 客户端过滤，已加载全部行
+    .Where(p => SomeClientFilter(p)); // ，
 
-// ✅ 尽可能让数据库执行过滤
+// ✅ 
 var results = await context.Posts
     .Where(p => p.Title.StartsWith("A") && SomeDbFilter(p))
     .AsAsyncEnumerable()
-    .Where(p => SomeClientFilter(p)) // 只过滤数据库返回的行
+    .Where(p => SomeClientFilter(p)) // 
     .ToListAsync();
 ```
 
 ### Count() vs Any()
 
 ```csharp
-// ❌ Count() 执行完整查询
+// ❌ Count() 
 if (context.Users.Count() > 0) { /* ... */ }
 
-// ✅ Any() 更高效——遇到第一条记录就返回
+// ✅ Any() ——
 if (await context.Users.AnyAsync()) { /* ... */ }
 ```
 
-### 多次枚举 IEnumerable
+###  IEnumerable
 
 ```csharp
-// ❌ IEnumerable 被枚举两次
+// ❌ IEnumerable 
 public void Process(IEnumerable<int> numbers)
 {
-    if (numbers.Any()) // 第一次枚举
+    if (numbers.Any()) // 
     {
-        foreach (var n in numbers) // 第二次枚举（可能是重新查询）
+        foreach (var n in numbers) // （）
         {
             Console.WriteLine(n);
         }
     }
 }
 
-// ✅ 如果需要多次使用，先物化
+// ✅ ，
 public void Process(IEnumerable<int> numbers)
 {
-    var list = numbers.ToList(); // 只枚举一次
+    var list = numbers.ToList(); // 
     if (list.Any())
     {
         foreach (var n in list)
@@ -455,17 +455,17 @@ public void Process(IEnumerable<int> numbers)
 }
 ```
 
-### Select 中的副作用
+### Select 
 
 ```csharp
-// ❌ Select 中执行副作用——不可预测的执行时机
+// ❌ Select ——
 var results = users.Select(u =>
 {
-    _logger.LogInformation($"Processing {u.Name}"); // 副作用！
+    _logger.LogInformation($"Processing {u.Name}"); // ！
     return u.Email;
 }).ToList();
 
-// ✅ 副作用放在 foreach 中
+// ✅  foreach 
 foreach (var user in users)
 {
     _logger.LogInformation("Processing {Name}", user.Name);
@@ -477,45 +477,45 @@ var results = users.Select(u => u.Email).ToList();
 
 ## Review Checklist
 
-### C# 12 新特性
+### C# 12 
 
-- [ ] Primary constructor 参数不被重新赋值
-- [ ] 集合表达式语法一致（不混用新旧风格）
+- [ ] Primary constructor 
+- [ ] （）
 
-### 异步编程
+### 
 
-- [ ] 无 `Task.Wait()`、`.Result`、`async void`
-- [ ] 库代码使用 `ConfigureAwait(false)`
-- [ ] `CancellationToken` 全链路传递
-- [ ] 异步资源使用 `IAsyncDisposable` / `await using`
-- [ ] 不混用同步和异步数据访问
+- [ ]  `Task.Wait()`、`.Result`、`async void`
+- [ ]  `ConfigureAwait(false)`
+- [ ] `CancellationToken` 
+- [ ]  `IAsyncDisposable` / `await using`
+- [ ] 
 
 ### EF Core
 
-- [ ] 无 N+1 查询（导航属性在循环中访问）
-- [ ] 投影 `Select()` 避免过度获取
-- [ ] 分页：`ToListAsync()` 前有 `Take()`/`Skip()`
-- [ ] 多个 `Include()` 使用 `AsSplitQuery()`
-- [ ] 只读查询使用 `AsNoTracking()`
-- [ ] 列上无函数调用阻止索引使用
-- [ ] 数据库调用全部异步
+- [ ]  N+1 （）
+- [ ]  `Select()` 
+- [ ] ：`ToListAsync()`  `Take()`/`Skip()`
+- [ ]  `Include()`  `AsSplitQuery()`
+- [ ]  `AsNoTracking()`
+- [ ] 
+- [ ] 
 
 ### ASP.NET Core
 
-- [ ] HttpClient 通过 `IHttpClientFactory` 获取
-- [ ] 后台任务中不直接使用 scoped 服务
-- [ ] 使用 `ReadFormAsync` 代替 `Request.Form`
-- [ ] 异常不用于控制流
-- [ ] 响应头通过 `OnStarting` 设置
+- [ ] HttpClient  `IHttpClientFactory` 
+- [ ]  scoped 
+- [ ]  `ReadFormAsync`  `Request.Form`
+- [ ] 
+- [ ]  `OnStarting` 
 
-### 依赖注入
+### 
 
-- [ ] Scoped 服务不注入 Singleton
-- [ ] 后台任务创建新 scope
+- [ ] Scoped  Singleton
+- [ ]  scope
 
 ### LINQ
 
-- [ ] 无不必要的 `ToList()` 后再 LINQ
-- [ ] `Any()` 代替 `Count() > 0`
-- [ ] IEnumerable 不被多次枚举（或先物化）
-- [ ] Select 中无副作用
+- [ ]  `ToList()`  LINQ
+- [ ] `Any()`  `Count() > 0`
+- [ ] IEnumerable （）
+- [ ] Select 

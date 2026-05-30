@@ -1,68 +1,68 @@
 # Django / DRF Code Review Guide
 
-> Django / DRF 代码审查指南，覆盖安全审查、N+1 查询优化、Serializer 反模式、ViewSet 最佳实践、异步视图及生产安全配置等核心主题。
+> Django / DRF ，、N+1 、Serializer 、ViewSet 、。
 
-## 目录
+## 
 
-- [安全审查](#安全审查)
-- [N+1 查询优化](#n1-查询优化)
-- [Serializer 反模式](#serializer-反模式)
-- [ViewSet 最佳实践](#viewset-最佳实践)
-- [异步视图](#异步视图)
-- [中间件与设置](#中间件与设置)
+- [](#)
+- [N+1 ](#n1-)
+- [Serializer ](#serializer-)
+- [ViewSet ](#viewset-)
+- [](#)
+- [](#)
 - [Review Checklist](#review-checklist)
 
 ---
 
-## 安全审查
+## 
 
-### XSS 防护
+### XSS 
 
 ```python
 from django.utils.safestring import mark_safe
 from django.template import engines
 
-# ❌ mark_safe 绕过自动转义，直接渲染用户输入
+# ❌ mark_safe ，
 def user_profile(request):
-    user_bio = request.user.bio  # 用户可控
+    user_bio = request.user.bio  # 
     return HttpResponse(mark_safe(f"<p>{user_bio}</p>"))
 
-# ❌ 在模板中手动关闭 autoescape
+# ❌  autoescape
 # {% autoescape off %}{{ user_bio }}{% endautoescape %}
 
-# ✅ 让 Django 模板引擎自动转义
+# ✅  Django 
 # template: <p>{{ user_bio }}</p>
 
-# ✅ 必须使用 mark_safe 时，先手动转义
+# ✅  mark_safe ，
 from django.utils.html import escape
 
 def render_bio(bio: str) -> str:
     return mark_safe(f"<p>{escape(bio)}</p>")
 ```
 
-### CSRF 防护
+### CSRF 
 
 ```python
 from django.views.decorators.csrf import csrf_exempt
 
-# ❌ 禁用 CSRF 保护
+# ❌  CSRF 
 @csrf_exempt
 def process_payment(request):
-    # 任何恶意网站都可以提交表单
+    # 
     amount = request.POST["amount"]
     charge(amount)
 
-# ✅ 保留默认 CSRF 保护
+# ✅  CSRF 
 from django.middleware.csrf import CsrfViewMiddleware
 
-# settings.py — 确保 CSRF 中间件已启用
+# settings.py —  CSRF 
 MIDDLEWARE = [
     # ...
     "django.middleware.csrf.CsrfViewMiddleware",
     # ...
 ]
 
-# ✅ API 使用 token 认证代替 CSRF
+# ✅ API  token  CSRF
 # settings.py
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -71,52 +71,52 @@ REST_FRAMEWORK = {
     ],
 }
 
-# ✅ 前端 AJAX 请求带上 CSRF token
+# ✅  AJAX  CSRF token
 # JavaScript: fetch("/api/endpoint/", {
 #   headers: {"X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value}
 # })
 ```
 
-### Cookie 安全设置
+### Cookie 
 
 ```python
 # settings.py
 
-# ❌ 不安全的 cookie 配置
+# ❌  cookie 
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = False
 
-# ✅ 生产环境 cookie 安全配置
+# ✅  cookie 
 SESSION_COOKIE_SECURE = True    # HTTPS only
-SESSION_COOKIE_HTTPONLY = True   # JavaScript 无法读取
-SESSION_COOKIE_SAMESITE = "Lax"  # 防止 CSRF
+SESSION_COOKIE_HTTPONLY = True   # JavaScript 
+SESSION_COOKIE_SAMESITE = "Lax"  #  CSRF
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Lax"
 ```
 
-### SQL 注入防护
+### SQL 
 
 ```python
 from django.db import connection
 
-# ❌ 字符串拼接 SQL — SQL 注入风险
+# ❌  SQL — SQL 
 def search_users(keyword):
     query = f"SELECT * FROM auth_user WHERE username LIKE '%{keyword}%'"
     with connection.cursor() as cursor:
         cursor.execute(query)
 
-# ❌ extra() 方法不安全
+# ❌ extra() 
 User.objects.extra(
     where=[f"username = '{keyword}'"]
 )
 
-# ✅ 使用 ORM 参数化查询
+# ✅  ORM 
 def search_users(keyword):
     return User.objects.filter(username__icontains=keyword)
 
-# ✅ 原始 SQL 使用参数化
+# ✅  SQL 
 def search_users(keyword):
     with connection.cursor() as cursor:
         cursor.execute(
@@ -124,29 +124,29 @@ def search_users(keyword):
             [f"%{keyword}%"],
         )
 
-# ✅ 使用 raw() 参数化
+# ✅  raw() 
 User.objects.raw(
     "SELECT * FROM auth_user WHERE username LIKE %s",
     [f"%{keyword}%"],
 )
 ```
 
-### 文件上传安全
+### 
 
 ```python
 # settings.py
 
-# ❌ 默认上传配置不安全
-FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5 MB — 可以接受
-MEDIA_ROOT = "/var/www/uploads"         # web 根目录下
-ALLOWED_UPLOAD_TYPES = None             # 没有类型限制
+# ❌ 
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5 MB — 
+MEDIA_ROOT = "/var/www/uploads"         # web 
+ALLOWED_UPLOAD_TYPES = None             # 
 
-# ✅ 限制上传大小和位置
+# ✅ 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440   # 2.5 MB in-memory
-MEDIA_ROOT = "/srv/media/"              # web 根目录之外
+MEDIA_ROOT = "/srv/media/"              # web 
 
-# ✅ 验证文件类型
+# ✅ 
 import mimetypes
 from pathlib import Path
 
@@ -163,50 +163,50 @@ def validate_upload(file):
 
 ---
 
-## N+1 查询优化
+## N+1 
 
 ### select_related（ForeignKey / OneToOne）
 
 ```python
-# ❌ N+1: 每本书查一次出版社
+# ❌ N+1: 
 books = Book.objects.all()
 for book in books:
-    print(book.publisher.name)  # 额外 N 条查询
+    print(book.publisher.name)  #  N 
 
-# ✅ select_related 一次 JOIN 查询
+# ✅ select_related  JOIN 
 books = Book.objects.select_related("publisher")
 for book in books:
-    print(book.publisher.name)  # 无额外查询
+    print(book.publisher.name)  # 
 
-# ✅ 多层关系
+# ✅ 
 books = Book.objects.select_related("publisher", "publisher__country")
 
-# ✅ 只查需要的字段（延迟加载优化）
+# ✅ （）
 books = Book.objects.select_related("publisher").only(
     "title", "publisher__name"
 )
 ```
 
-### prefetch_related（M2M / 反向 ForeignKey）
+### prefetch_related（M2M /  ForeignKey）
 
 ```python
-# ❌ N+1: 每个作者查一次书
+# ❌ N+1: 
 authors = Author.objects.all()
 for author in authors:
-    print(author.books.all())  # 额外 N 条查询
+    print(author.books.all())  #  N 
 
-# ✅ prefetch_related 两条查询 + Python 合并
+# ✅ prefetch_related  + Python 
 authors = Author.objects.prefetch_related("books")
 for author in authors:
-    print(list(author.books.all()))  # 无额外查询
+    print(list(author.books.all()))  # 
 
-# ✅ 嵌套 prefetch
+# ✅  prefetch
 authors = Author.objects.prefetch_related(
     "books",
     "books__publisher",
 )
 
-# ✅ Prefetch 对象控制预查行为
+# ✅ Prefetch 
 from django.db.models import Prefetch
 
 authors = Author.objects.prefetch_related(
@@ -217,69 +217,69 @@ authors = Author.objects.prefetch_related(
     )
 )
 for author in authors:
-    print(author.published_books)  # 已过滤，存在 to_attr 中
+    print(author.published_books)  # ， to_attr 
 ```
 
-### QuerySet 缓存误用
+### QuerySet 
 
 ```python
-# ❌ 重复评估同一个 QuerySet
+# ❌  QuerySet
 qs = Book.objects.all()
-count = len(qs)             # 评估 1: SELECT COUNT(*)
-titles = [b.title for b in qs]  # 评估 2: SELECT * — 缓存失效！
+count = len(qs)             #  1: SELECT COUNT(*)
+titles = [b.title for b in qs]  #  2: SELECT * — ！
 
-# ✅ 使用 count() 和一次性迭代
+# ✅  count() 
 qs = Book.objects.all()
-count = qs.count()          # SELECT COUNT(*) — 不填充缓存
-titles = [b.title for b in qs]  # SELECT * — 唯一一次评估
+count = qs.count()          # SELECT COUNT(*) — 
+titles = [b.title for b in qs]  # SELECT * — 
 
-# ✅ 如果需要多次迭代，先转 list
-books = list(Book.objects.all())  # 一次查询
+# ✅ ， list
+books = list(Book.objects.all())  # 
 count = len(books)
 titles = [b.title for b in books]
 ```
 
-### 切片不填充缓存
+### 
 
 ```python
-# ❌ 切片后迭代触发两次查询
-qs = Book.objects.all()[:10]   # 切片：不填充缓存
-first = list(qs)               # 查询 1
-second = list(qs)              # 查询 2 — 重复！
+# ❌ 
+qs = Book.objects.all()[:10]   # ：
+first = list(qs)               #  1
+second = list(qs)              #  2 — ！
 
-# ✅ 切片后立即转 list
-books = list(Book.objects.all()[:10])  # 一次查询
+# ✅  list
+books = list(Book.objects.all()[:10])  # 
 first = books
-second = list(books)  # 使用 Python list，无查询
+second = list(books)  #  Python list，
 ```
 
 ### len() vs count()
 
 ```python
-# ❌ len() 加载全部对象到内存
-total = len(Book.objects.all())  # SELECT * FROM book — 全表加载
+# ❌ len() 
+total = len(Book.objects.all())  # SELECT * FROM book — 
 
-# ✅ count() 在数据库端计数
-total = Book.objects.count()  # SELECT COUNT(*) — 高效
+# ✅ count() 
+total = Book.objects.count()  # SELECT COUNT(*) — 
 
-# ✅ 如果已经需要 QuerySet 结果，再用 len
+# ✅  QuerySet ， len
 books = list(Book.objects.filter(published=True))
-total = len(books)  # 已在内存中，不需要额外查询
+total = len(books)  # ，
 ```
 
 ### if qs vs qs.exists()
 
 ```python
-# ❌ if qs 加载全部记录
+# ❌ if qs 
 qs = Book.objects.filter(author_id=author_id)
-if qs:  # SELECT * FROM book WHERE ... — 全部加载
+if qs:  # SELECT * FROM book WHERE ... — 
     return qs[0]
 
-# ✅ exists() 只检查是否有记录
+# ✅ exists() 
 if Book.objects.filter(author_id=author_id).exists():
     return Book.objects.filter(author_id=author_id).first()
 
-# ✅ 或者直接 get/first 判空
+# ✅  get/first 
 book = Book.objects.filter(author_id=author_id).first()
 if book is not None:
     return book
@@ -287,32 +287,32 @@ if book is not None:
 
 ---
 
-## Serializer 反模式
+## Serializer 
 
-### 排除敏感字段
+### 
 
 ```python
 from rest_framework import serializers
 
-# ❌ __all__ 暴露所有字段，包括敏感数据
+# ❌ __all__ ，
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = "__all__"  # 密码 hash、is_superuser 等全部暴露
+        fields = "__all__"  #  hash、is_superuser 
 
-# ✅ 显式列出允许的字段
+# ✅ 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email", "first_name", "last_name"]
 
-# ✅ 使用 exclude 时也要注意
+# ✅  exclude 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         exclude = ["internal_notes", "admin_flags"]
 
-# ✅ 密码字段用 write_only
+# ✅  write_only
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
@@ -327,18 +327,18 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return user
 ```
 
-### 缺少验证
+### 
 
 ```python
 from rest_framework import serializers
 
-# ❌ 没有验证，信任所有输入
+# ❌ ，
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["quantity", "price", "discount"]
 
-# ✅ 字段级验证
+# ✅ 
 class OrderSerializer(serializers.ModelSerializer):
     quantity = serializers.IntegerField(min_value=1, max_value=100)
     price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
@@ -350,7 +350,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ["quantity", "price", "discount"]
 
-# ✅ 对象级验证
+# ✅ 
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
@@ -363,7 +363,7 @@ class OrderSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-# ✅ 自定义字段验证方法
+# ✅ 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
@@ -380,25 +380,25 @@ class BookingSerializer(serializers.ModelSerializer):
         return attrs
 ```
 
-### 嵌套写入
+### 
 
 ```python
 from rest_framework import serializers
 
-# ❌ 嵌套 Serializer 只读但没有实现 create/update
+# ❌  Serializer  create/update
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ["id", "name"]
 
 class ArticleSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True)  # 嵌套写入会失败
+    tags = TagSerializer(many=True)  # 
 
     class Meta:
         model = Article
         fields = ["id", "title", "tags"]
 
-# ✅ 方案 1: 嵌套只读 + PrimaryKeyRelatedField 写入
+# ✅  1:  + PrimaryKeyRelatedField 
 class ArticleSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     tag_ids = serializers.PrimaryKeyRelatedField(
@@ -412,7 +412,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = ["id", "title", "tags", "tag_ids"]
 
-# ✅ 方案 2: 实现 create() 处理嵌套
+# ✅  2:  create() 
 class ArticleSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
 
@@ -439,26 +439,26 @@ class ArticleSerializer(serializers.ModelSerializer):
         return instance
 ```
 
-### read_only_fields 遗漏
+### read_only_fields 
 
 ```python
 from rest_framework import serializers
 
-# ❌ 计算字段和自动字段可被用户覆盖
+# ❌ 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ["id", "body", "author", "created_at", "updated_at"]
-        # created_at, updated_at, author 可被客户端篡改
+        # created_at, updated_at, author 
 
-# ✅ 标记只读字段
+# ✅ 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ["id", "body", "author", "created_at", "updated_at"]
         read_only_fields = ["author", "created_at", "updated_at"]
 
-# ✅ 在视图中设置只读字段（如当前用户）
+# ✅ （）
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
@@ -473,26 +473,26 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 ---
 
-## ViewSet 最佳实践
+## ViewSet 
 
-### 选择正确的基类
+### 
 
 ```python
 from rest_framework import viewsets
 
-# ❌ ModelViewSet 提供完整 CRUD，但只需要读取
+# ❌ ModelViewSet  CRUD，
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    # 暴露了 destroy, update, create — 标签不应被随意修改
+    #  destroy, update, create — 
 
-# ✅ 只读场景用 ReadOnlyModelViewSet
+# ✅  ReadOnlyModelViewSet
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    # 只提供 list 和 retrieve
+    #  list  retrieve
 
-# ✅ 需要自定义操作时用 Mixin
+# ✅  Mixin
 from rest_framework import mixins
 
 class TagViewSet(
@@ -505,17 +505,17 @@ class TagViewSet(
     serializer_class = TagSerializer
 ```
 
-### 用户级数据范围限定
+### 
 
 ```python
 from rest_framework import viewsets
 
-# ❌ 任何用户可以看到所有数据
+# ❌ 
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
 
-# ✅ get_queryset 限定当前用户数据
+# ✅ get_queryset 
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
 
@@ -524,7 +524,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             owner=self.request.user
         ).select_related("owner")
 
-# ✅ 管理员看全部，普通用户看自己的
+# ✅ ，
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
 
@@ -534,7 +534,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             return qs
         return qs.filter(owner=self.request.user)
 
-# ✅ perform_create 自动关联当前用户
+# ✅ perform_create 
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
 
@@ -545,23 +545,23 @@ class DocumentViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 ```
 
-### 权限控制
+### 
 
 ```python
 from rest_framework import permissions, viewsets
 
-# ❌ 没有权限控制
+# ❌ 
 class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
 
-# ✅ 类级别权限
+# ✅ 
 class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-# ✅ 操作级别权限
+# ✅ 
 from rest_framework.decorators import action
 
 class ArticleViewSet(viewsets.ModelViewSet):
@@ -575,7 +575,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         return [permissions.IsAdminUser()]
 
-# ✅ 自定义对象级权限
+# ✅ 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
@@ -583,19 +583,19 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return obj.owner == request.user
 ```
 
-### 分页和节流
+### 
 
 ```python
 # settings.py
 
-# ❌ 没有分页和节流配置
+# ❌ 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
     ],
 }
 
-# ✅ 全局分页和节流
+# ✅ 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
@@ -609,7 +609,7 @@ REST_FRAMEWORK = {
     },
 }
 
-# ✅ 自定义分页器
+# ✅ 
 from rest_framework.pagination import PageNumberPagination
 
 class StandardPagination(PageNumberPagination):
@@ -625,22 +625,22 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
 ---
 
-## 异步视图
+## 
 
-### 同步 ORM 在异步视图中的正确使用
+###  ORM 
 
 ```python
 import asyncio
 from asgiref.sync import sync_to_async
 from django.http import JsonResponse
 
-# ❌ 在 async 视图中直接调用同步 ORM — 阻塞事件循环
+# ❌  async  ORM — 
 async def user_list(request):
     users = User.objects.all()  # Synchronous ORM call in async context!
     data = [{"id": u.id, "name": u.username} for u in users]
     return JsonResponse(data, safe=False)
 
-# ✅ 使用 async ORM（Django 4.1+）
+# ✅  async ORM（Django 4.1+）
 async def user_list(request):
     users = User.objects.all()
     data = []
@@ -648,12 +648,12 @@ async def user_list(request):
         data.append({"id": user.id, "name": user.username})
     return JsonResponse(data, safe=False)
 
-# ✅ 使用 aget / afilter / acreate
+# ✅  aget / afilter / acreate
 async def user_detail(request, pk):
     user = await User.objects.aget(pk=pk)
     return JsonResponse({"id": user.id, "name": user.username})
 
-# ✅ 复杂查询用 sync_to_async
+# ✅  sync_to_async
 @sync_to_async
 def get_user_with_profile(pk):
     return User.objects.select_related("profile").get(pk=pk)
@@ -667,23 +667,23 @@ async def user_profile(request, pk):
     })
 ```
 
-### 遗漏 await
+###  await
 
 ```python
 from django.http import JsonResponse
 
-# ❌ 忘记 await — coroutine 不会执行，返回协程对象而非数据
+# ❌  await — coroutine ，
 async def user_detail(request, pk):
     user = User.objects.aget(pk=pk)  # Missing await!
-    # user 是一个 coroutine 对象，不是 User 实例
+    # user  coroutine ， User 
     return JsonResponse({"name": user.username})  # RuntimeError
 
-# ✅ 始终 await 异步 ORM 调用
+# ✅  await  ORM 
 async def user_detail(request, pk):
     user = await User.objects.aget(pk=pk)
     return JsonResponse({"name": user.username})
 
-# ✅ 使用aget_or_404 的异步版本
+# ✅ aget_or_404 
 from django.shortcuts import aget_object_or_404
 
 async def user_detail(request, pk):
@@ -691,20 +691,20 @@ async def user_detail(request, pk):
     return JsonResponse({"name": user.username})
 ```
 
-### 异步视图中的事务
+### 
 
 ```python
 from django.db import transaction
 from asgiref.sync import sync_to_async
 
-# ❌ transaction.atomic() 是同步的，不能直接在 async 中用
+# ❌ transaction.atomic() ， async 
 async def create_order(request):
     async with transaction.atomic():  # Error! Not async-compatible
         order = await Order.objects.acreate(total=100)
         await OrderItem.objects.acreate(order=order, product_id=1)
     return JsonResponse({"order_id": order.id})
 
-# ✅ 用 sync_to_async 包装事务块
+# ✅  sync_to_async 
 @sync_to_async
 def _create_order_with_items():
     with transaction.atomic():
@@ -716,7 +716,7 @@ async def create_order(request):
     order_id = await _create_order_with_items()
     return JsonResponse({"order_id": order_id})
 
-# ✅ 多个操作打包到一个 sync_to_async 中
+# ✅  sync_to_async 
 @sync_to_async
 def _bulk_create_products(items):
     with transaction.atomic():
@@ -728,10 +728,10 @@ async def import_products(request):
     return JsonResponse({"ids": ids})
 ```
 
-### 同步中间件拖慢异步性能
+### 
 
 ```python
-# ❌ 同步中间件会把 async 视图降级为同步执行
+# ❌  async 
 class TimingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -743,7 +743,7 @@ class TimingMiddleware:
         response["X-Elapsed"] = str(elapsed)
         return response
 
-# ✅ 同时支持同步和异步的中间件
+# ✅ 
 import time
 
 class TimingMiddleware:
@@ -767,38 +767,38 @@ class TimingMiddleware:
         response["X-Elapsed"] = str(elapsed)
         return response
 
-# ✅ 或者使用 Django 内置的 async 安全装饰器
+# ✅  Django  async 
 from django.utils.decorators import sync_and_async_middleware
 ```
 
-### async for 迭代模式
+### async for 
 
 ```python
 from django.http import JsonResponse
 
-# ❌ 同步迭代大型 QuerySet 在 async 视图中阻塞
+# ❌  QuerySet  async 
 async def export_users(request):
     users = User.objects.all()
-    data = []  # 同步迭代阻塞事件循环
+    data = []  # 
     for user in users:
         data.append({"id": user.id, "name": user.username})
     return JsonResponse(data, safe=False)
 
-# ✅ 使用 async for 异步迭代
+# ✅  async for 
 async def export_users(request):
     data = []
     async for user in User.objects.all():
         data.append({"id": user.id, "name": user.username})
     return JsonResponse(data, safe=False)
 
-# ✅ 大数据集使用 aiterator() + 分块处理
+# ✅  aiterator() + 
 async def export_large_dataset(request):
     data = []
     async for user in User.objects.all().aiterator(chunk_size=500):
         data.append({"id": user.id, "name": user.username})
     return JsonResponse(data, safe=False)
 
-# ✅ 使用 values() 减少内存
+# ✅  values() 
 async def lightweight_export(request):
     data = []
     async for row in User.objects.values("id", "username"):
@@ -808,42 +808,42 @@ async def lightweight_export(request):
 
 ---
 
-## 中间件与设置
+## 
 
-### 生产安全配置清单
+### 
 
 ```python
-# settings.py — 生产环境必须的安全设置
+# settings.py — 
 
-# ❌ 开发默认值不应出现在生产环境
+# ❌ 
 DEBUG = True
 SECRET_KEY = "django-insecure-..."
 ALLOWED_HOSTS = ["*"]
 SECURE_SSL_REDIRECT = False
 
-# ✅ 生产环境安全配置
+# ✅ 
 
-# --- 基础安全 ---
+# ---  ---
 DEBUG = False
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]  # 从环境变量读取
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]  # 
 ALLOWED_HOSTS = ["example.com", "www.example.com"]
 
 # --- HTTPS ---
-SECURE_SSL_REDIRECT = True          # HTTP 重定向到 HTTPS
+SECURE_SSL_REDIRECT = True          # HTTP  HTTPS
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# --- 安全头 ---
+# ---  ---
 SECURE_HSTS_SECONDS = 31536000      # 1 year HSTS
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True   # X-Content-Type-Options: nosniff
 SECURE_BROWSER_XSS_FILTER = True     # X-XSS-Protection: 1; mode=block
-X_FRAME_OPTIONS = "DENY"             # 防止 clickjacking
+X_FRAME_OPTIONS = "DENY"             #  clickjacking
 REFERRER_POLICY = "strict-origin-when-cross-origin"
 
-# --- 密码验证 ---
+# ---  ---
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
      "OPTIONS": {"min_length": 12}},
@@ -857,24 +857,24 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 ```
 
-### 数据库连接安全
+### 
 
 ```python
 # settings.py
 
-# ❌ 明文密码在代码中
+# ❌ 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "mydb",
         "USER": "admin",
-        "PASSWORD": "hunter2",  # 不要硬编码密码
+        "PASSWORD": "hunter2",  # 
         "HOST": "localhost",
         "PORT": "5432",
     }
 }
 
-# ✅ 从环境变量读取
+# ✅ 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -884,28 +884,28 @@ DATABASES = {
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
         "OPTIONS": {
-            "sslmode": "require",  # 强制 SSL 连接
+            "sslmode": "require",  #  SSL 
         },
-        "CONN_MAX_AGE": 60,  # 持久连接
+        "CONN_MAX_AGE": 60,  # 
     }
 }
 ```
 
-### CORS 配置
+### CORS 
 
 ```python
 # settings.py (using django-cors-headers)
 
-# ❌ 允许所有来源
+# ❌ 
 CORS_ALLOW_ALL_ORIGINS = True
 
-# ✅ 限制允许的来源
+# ✅ 
 CORS_ALLOWED_ORIGINS = [
     "https://example.com",
     "https://app.example.com",
 ]
 
-# ✅ 生产环境 CORS 设置
+# ✅  CORS 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ORIGINS", "").split(",")
 CORS_ALLOW_CREDENTIALS = True
@@ -917,15 +917,15 @@ CORS_ALLOW_HEADERS = [
 ]
 ```
 
-### 日志配置
+### 
 
 ```python
 # settings.py
 
-# ❌ 默认日志配置（或不配置）
+# ❌ （）
 LOGGING = {}
 
-# ✅ 生产环境日志配置
+# ✅ 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -964,65 +964,65 @@ LOGGING = {
 
 ## Review Checklist
 
-### 安全审查
+### 
 
-- [ ] 没有使用 `mark_safe` 渲染未转义的用户输入
-- [ ] CSRF 中间件已启用，没有 `@csrf_exempt`
-- [ ] Session 和 CSRF cookie 设置 `Secure`, `HttpOnly`, `SameSite`
-- [ ] SQL 查询使用参数化（ORM 或参数化 `raw()`），无字符串拼接
-- [ ] 文件上传有类型和大小限制
-- [ ] `SECRET_KEY` 从环境变量读取，不在代码仓库中
-- [ ] `DEBUG = False` 在生产环境
+- [ ]  `mark_safe` 
+- [ ] CSRF ， `@csrf_exempt`
+- [ ] Session  CSRF cookie  `Secure`, `HttpOnly`, `SameSite`
+- [ ] SQL （ORM  `raw()`），
+- [ ] 
+- [ ] `SECRET_KEY` ，
+- [ ] `DEBUG = False` 
 
-### HTTPS 与安全头
+### HTTPS 
 
 - [ ] `SECURE_SSL_REDIRECT = True`
-- [ ] `SECURE_HSTS_SECONDS` 已设置（≥ 31536000）
+- [ ] `SECURE_HSTS_SECONDS` （≥ 31536000）
 - [ ] `SECURE_CONTENT_TYPE_NOSNIFF = True`
-- [ ] `X_FRAME_OPTIONS` 设置为 `DENY` 或 `SAMEORIGIN`
-- [ ] `ALLOWED_HOSTS` 不包含 `"*"`
-- [ ] 数据库连接使用 SSL
+- [ ] `X_FRAME_OPTIONS`  `DENY`  `SAMEORIGIN`
+- [ ] `ALLOWED_HOSTS`  `"*"`
+- [ ]  SSL
 
-### N+1 查询
+### N+1 
 
-- [ ] ForeignKey 关系使用 `select_related`
-- [ ] M2M / 反向关系使用 `prefetch_related`
-- [ ] 没有在循环中访问关联对象
-- [ ] 使用 `count()` 代替 `len(queryset)` 做计数
-- [ ] 使用 `exists()` 代替 `if queryset` 做存在性检查
-- [ ] 大数据集使用 `only()` / `defer()` 或 `values()` 减少查询字段
-- [ ] 切片后的 QuerySet 不重复迭代
+- [ ] ForeignKey  `select_related`
+- [ ] M2M /  `prefetch_related`
+- [ ] 
+- [ ]  `count()`  `len(queryset)` 
+- [ ]  `exists()`  `if queryset` 
+- [ ]  `only()` / `defer()`  `values()` 
+- [ ]  QuerySet 
 
 ### Serializer
 
-- [ ] 不使用 `fields = "__all__"` 在敏感模型上
-- [ ] 密码字段标记 `write_only=True`
-- [ ] 有字段级和对象级验证
-- [ ] 嵌套写入实现了 `create()` / `update()` 或使用 `read_only=True`
-- [ ] 计算字段和自动字段在 `read_only_fields` 中
-- [ ] Serializer 不包含不应被修改的字段
+- [ ]  `fields = "__all__"` 
+- [ ]  `write_only=True`
+- [ ] 
+- [ ]  `create()` / `update()`  `read_only=True`
+- [ ]  `read_only_fields` 
+- [ ] Serializer 
 
 ### ViewSet
 
-- [ ] 只读场景使用 `ReadOnlyModelViewSet`
-- [ ] `get_queryset()` 限定当前用户数据范围
-- [ ] 设置了 `permission_classes`
-- [ ] 创建时用 `perform_create()` 自动设置 owner/author
-- [ ] 配置了分页（全局或 ViewSet 级别）
-- [ ] 配置了节流（throttling）
+- [ ]  `ReadOnlyModelViewSet`
+- [ ] `get_queryset()` 
+- [ ]  `permission_classes`
+- [ ]  `perform_create()`  owner/author
+- [ ] （ ViewSet ）
+- [ ] （throttling）
 
-### 异步视图
+### 
 
-- [ ] async 视图中不直接调用同步 ORM（用 `aget`/`afilter`/`sync_to_async`）
-- [ ] 所有异步调用都有 `await`
-- [ ] `transaction.atomic()` 用 `sync_to_async` 包装
-- [ ] 中间件标记 `async_capable = True` 以避免降级
-- [ ] 大型 QuerySet 使用 `async for` + `aiterator()`
+- [ ] async  ORM（ `aget`/`afilter`/`sync_to_async`）
+- [ ]  `await`
+- [ ] `transaction.atomic()`  `sync_to_async` 
+- [ ]  `async_capable = True` 
+- [ ]  QuerySet  `async for` + `aiterator()`
 
-### 生产配置
+### 
 
-- [ ] `CORS_ALLOWED_ORIGINS` 不使用 `CORS_ALLOW_ALL_ORIGINS = True`
-- [ ] 密码验证器已配置（最小长度、常见密码检查）
-- [ ] Session 过期时间合理（`SESSION_COOKIE_AGE`）
-- [ ] 日志配置使用 RotatingFileHandler，不在生产环境输出到 stdout
-- [ ] 数据库连接使用 `CONN_MAX_AGE` 持久连接
+- [ ] `CORS_ALLOWED_ORIGINS`  `CORS_ALLOW_ALL_ORIGINS = True`
+- [ ] （、）
+- [ ] Session （`SESSION_COOKIE_AGE`）
+- [ ]  RotatingFileHandler， stdout
+- [ ]  `CONN_MAX_AGE` 

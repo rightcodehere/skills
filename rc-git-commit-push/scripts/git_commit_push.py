@@ -28,14 +28,6 @@ STATUS_LABELS = {
     "?": "untracked",
 }
 
-GENERIC_SUMMARY_PATTERNS = (
-    r"^(?:ai|agent|assistant|bot|chole|claude|copilot|gpt)\s+(?:updated?|changed?|modified?)\s+files?$",
-    r"^(?:updated?|changed?|modified?)\s+files?$",
-    r"^(?:update|change|modify)\s+(?:the\s+)?files?$",
-    r"^(?:misc(?:ellaneous)?|requested|various)\s+(?:changes|updates)$",
-    r"^(?:wip|work in progress)$",
-)
-
 
 def run_git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     process = subprocess.run(
@@ -152,54 +144,6 @@ def summarize_target_name(path: str) -> str:
     return Path(path).stem.replace("-", " ").replace("_", " ")
 
 
-def summarize_name_list(names: list[str], plural_label: str) -> str:
-    unique_names = list(dict.fromkeys(name for name in names if name))
-    if not unique_names:
-        return plural_label
-    if len(unique_names) == 1:
-        return unique_names[0]
-    if len(unique_names) == 2:
-        return f"{unique_names[0]} and {unique_names[1]}"
-    if len(unique_names) == 3:
-        return f"{unique_names[0]}, {unique_names[1]}, and {unique_names[2]}"
-    return f"{len(unique_names)} {plural_label}"
-
-
-def summarize_repo_areas(files: list[ChangedFile]) -> str | None:
-    has_package_metadata = any(item.path in {"package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"} for item in files)
-    has_scripts = any(item.path_obj.parts and item.path_obj.parts[0] == "scripts" for item in files)
-    has_docs = any(
-        item.path_obj.parts
-        and item.path_obj.parts[0] != "skills"
-        and item.path.lower().endswith((".md", ".mdx", ".txt"))
-        for item in files
-    )
-    has_github = any(item.path_obj.parts and item.path_obj.parts[0] == ".github" for item in files)
-    has_other = any(
-        item.path_obj.parts
-        and item.path_obj.parts[0] not in {"skills", "scripts", ".github"}
-        and item.path not in {"package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
-        and not item.path.lower().endswith((".md", ".mdx", ".txt"))
-        for item in files
-    )
-
-    areas: list[str] = []
-    if has_package_metadata:
-        areas.append("package metadata")
-    if has_scripts:
-        areas.append("scripts")
-    if has_docs:
-        areas.append("docs")
-    if has_github:
-        areas.append("GitHub automation")
-    if has_other:
-        areas.append("repo files")
-
-    if not areas:
-        return None
-    return summarize_name_list(areas, "repo areas")
-
-
 def summarize_single_skill_change(skill_dir: str, files: list[ChangedFile], added: list[ChangedFile], deleted: list[ChangedFile], modified: list[ChangedFile]) -> str:
     skill_name = skill_dir.removeprefix("rc-").replace("-", " ")
     relative_paths = ["/".join(item.path_obj.parts[2:]) for item in files if len(item.path_obj.parts) >= 3]
@@ -244,15 +188,6 @@ def derive_summary_from_files(files: list[ChangedFile]) -> str:
     )
     if len(changed_skill_dirs) == 1:
         return summarize_single_skill_change(changed_skill_dirs[0], files, added, deleted, modified)
-    if len(changed_skill_dirs) > 1:
-        skill_targets = summarize_name_list(
-            [skill_dir.removeprefix("rc-").replace("-", " ") for skill_dir in changed_skill_dirs],
-            "skills",
-        )
-        repo_areas = summarize_repo_areas(files)
-        if repo_areas:
-            return f"update {skill_targets} plus {repo_areas}"
-        return f"update {skill_targets}"
 
     top_level = sorted({Path(path).parts[0] for path in paths if Path(path).parts})
     if len(top_level) == 1:
@@ -267,14 +202,6 @@ def derive_summary_from_files(files: list[ChangedFile]) -> str:
         if deleted and not added and not modified:
             return f"remove {target}"
         return f"update {target}"
-
-    repo_areas = summarize_repo_areas(files)
-    if repo_areas:
-        if added and not modified and not deleted:
-            return f"add {repo_areas}"
-        if deleted and not added and not modified:
-            return f"remove {repo_areas}"
-        return f"update {repo_areas}"
 
     if added and not deleted:
         return "add requested changes"
@@ -291,22 +218,19 @@ def normalize_summary(summary: str) -> str:
     return cleaned[0].lower() + cleaned[1:] if len(cleaned) > 1 else cleaned.lower()
 
 
-def summary_is_specific(summary: str) -> bool:
-    normalized = normalize_summary(summary)
-    if normalized in {"update changed files", "add requested changes", "remove obsolete files"}:
-        return False
-    lowered = normalized.lower()
-    return not any(re.fullmatch(pattern, lowered) for pattern in GENERIC_SUMMARY_PATTERNS)
-
-
 def infer_commit_type(summary: str, files: list[ChangedFile]) -> str:
     lowered = summary.lower()
     keyword_map = {
         "fix": "fix",
         "bug": "fix",
         "repair": "fix",
+        "docs": "docs",
+        "readme": "docs",
+        "test": "test",
         "refactor": "refactor",
         "cleanup": "refactor",
+        "ci": "ci",
+        "build": "build",
         "release": "chore",
         "bump": "chore",
         "add": "feat",
@@ -451,10 +375,9 @@ def main() -> int:
             print("No changed or untracked files found.")
             return 0
 
-        derived_summary = derive_summary_from_files(files)
         summary_seed = args.message or " ".join(args.summary).strip()
-        if not summary_is_specific(summary_seed):
-            summary_seed = derived_summary
+        if not summary_seed:
+            summary_seed = derive_summary_from_files(files)
 
         branch = current_branch(repo)
         remotes = list_remotes(repo)

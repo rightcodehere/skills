@@ -1,38 +1,38 @@
 # Rust Code Review Guide
 
-> Rust 代码审查指南。编译器能捕获内存安全问题，但审查者需要关注编译器无法检测的问题——业务逻辑、API 设计、性能、取消安全性和可维护性。
+> Rust 。，——、API 、、。
 
-## 目录
+## 
 
-- [所有权与借用](#所有权与借用)
-- [Unsafe 代码审查](#unsafe-代码审查最关键)
-- [异步代码](#异步代码)
-- [取消安全性](#取消安全性)
+- [](#)
+- [Unsafe ](#unsafe-)
+- [](#)
+- [](#)
 - [spawn vs await](#spawn-vs-await)
-- [错误处理](#错误处理)
-- [性能](#性能)
-- [Trait 设计](#trait-设计)
+- [](#)
+- [](#)
+- [Trait ](#trait-)
 - [Review Checklist](#rust-review-checklist)
 
 ---
 
-## 所有权与借用
+## 
 
-### 避免不必要的 clone()
+###  clone()
 
 ```rust
-// ❌ clone() 是"Rust 的胶带"——用于绕过借用检查器
+// ❌ clone() "Rust "——
 fn bad_process(data: &Data) -> Result<()> {
-    let owned = data.clone();  // 为什么需要 clone？
+    let owned = data.clone();  //  clone？
     expensive_operation(owned)
 }
 
-// ✅ 审查时问：clone 是否必要？能否用借用？
+// ✅ ：clone ？？
 fn good_process(data: &Data) -> Result<()> {
-    expensive_operation(data)  // 传递引用
+    expensive_operation(data)  // 
 }
 
-// ✅ 如果确实需要 clone，添加注释说明原因
+// ✅  clone，
 fn justified_clone(data: &Data) -> Result<()> {
     // Clone needed: data will be moved to spawned task
     let owned = data.clone();
@@ -43,73 +43,73 @@ fn justified_clone(data: &Data) -> Result<()> {
 }
 ```
 
-### Arc<Mutex<T>> 的使用
+### Arc<Mutex<T>> 
 
 ```rust
-// ❌ Arc<Mutex<T>> 可能隐藏不必要的共享状态
+// ❌ Arc<Mutex<T>> 
 struct BadService {
-    cache: Arc<Mutex<HashMap<String, Data>>>,  // 真的需要共享？
+    cache: Arc<Mutex<HashMap<String, Data>>>,  // ？
 }
 
-// ✅ 考虑是否需要共享，或者设计可以避免
+// ✅ ，
 struct GoodService {
-    cache: HashMap<String, Data>,  // 单一所有者
+    cache: HashMap<String, Data>,  // 
 }
 
-// ✅ 如果确实需要并发访问，考虑更好的数据结构
+// ✅ ，
 use dashmap::DashMap;
 
 struct ConcurrentService {
-    cache: DashMap<String, Data>,  // 更细粒度的锁
+    cache: DashMap<String, Data>,  // 
 }
 ```
 
-### Cow (Copy-on-Write) 模式
+### Cow (Copy-on-Write) 
 
 ```rust
 use std::borrow::Cow;
 
-// ❌ 总是分配新字符串
+// ❌ 
 fn bad_process_name(name: &str) -> String {
     if name.is_empty() {
-        "Unknown".to_string()  // 分配
+        "Unknown".to_string()  // 
     } else {
-        name.to_string()  // 不必要的分配
+        name.to_string()  // 
     }
 }
 
-// ✅ 使用 Cow 避免不必要的分配
+// ✅  Cow 
 fn good_process_name(name: &str) -> Cow<'_, str> {
     if name.is_empty() {
-        Cow::Borrowed("Unknown")  // 静态字符串，无分配
+        Cow::Borrowed("Unknown")  // ，
     } else {
-        Cow::Borrowed(name)  // 借用原始数据
+        Cow::Borrowed(name)  // 
     }
 }
 
-// ✅ 只在需要修改时才分配
+// ✅ 
 fn normalize_name(name: &str) -> Cow<'_, str> {
     if name.chars().any(|c| c.is_uppercase()) {
-        Cow::Owned(name.to_lowercase())  // 需要修改，分配
+        Cow::Owned(name.to_lowercase())  // ，
     } else {
-        Cow::Borrowed(name)  // 无需修改，借用
+        Cow::Borrowed(name)  // ，
     }
 }
 ```
 
 ---
 
-## Unsafe 代码审查（最关键！）
+## Unsafe （！）
 
-### 基本要求
+### 
 
 ```rust
-// ❌ unsafe 没有安全文档——这是红旗
+// ❌ unsafe ——
 unsafe fn bad_transmute<T, U>(t: T) -> U {
     std::mem::transmute(t)
 }
 
-// ✅ 每个 unsafe 必须解释：为什么安全？什么不变量？
+// ✅  unsafe ：？？
 /// Transmutes `T` to `U`.
 ///
 /// # Safety
@@ -123,15 +123,15 @@ unsafe fn documented_transmute<T, U>(t: T) -> U {
 }
 ```
 
-### Unsafe 块注释
+### Unsafe 
 
 ```rust
-// ❌ 没有解释的 unsafe 块
+// ❌  unsafe 
 fn bad_get_unchecked(slice: &[u8], index: usize) -> u8 {
     unsafe { *slice.get_unchecked(index) }
 }
 
-// ✅ 每个 unsafe 块必须有 SAFETY 注释
+// ✅  unsafe  SAFETY 
 fn good_get_unchecked(slice: &[u8], index: usize) -> u8 {
     debug_assert!(index < slice.len(), "index out of bounds");
     // SAFETY: We verified index < slice.len() via debug_assert.
@@ -139,7 +139,7 @@ fn good_get_unchecked(slice: &[u8], index: usize) -> u8 {
     unsafe { *slice.get_unchecked(index) }
 }
 
-// ✅ 封装 unsafe 提供安全 API
+// ✅  unsafe  API
 pub fn checked_get(slice: &[u8], index: usize) -> Option<u8> {
     if index < slice.len() {
         // SAFETY: bounds check performed above
@@ -150,10 +150,10 @@ pub fn checked_get(slice: &[u8], index: usize) -> Option<u8> {
 }
 ```
 
-### 常见 unsafe 模式
+###  unsafe 
 
 ```rust
-// ✅ FFI 边界
+// ✅ FFI 
 extern "C" {
     fn external_function(ptr: *const u8, len: usize) -> i32;
 }
@@ -171,7 +171,7 @@ pub fn safe_wrapper(data: &[u8]) -> Result<i32, Error> {
     }
 }
 
-// ✅ 性能关键路径的 unsafe
+// ✅  unsafe
 pub fn fast_copy(src: &[u8], dst: &mut [u8]) {
     assert_eq!(src.len(), dst.len(), "slices must be equal length");
     // SAFETY: src and dst are valid slices of equal length,
@@ -188,84 +188,84 @@ pub fn fast_copy(src: &[u8], dst: &mut [u8]) {
 
 ---
 
-## 异步代码
+## 
 
-### 避免阻塞操作
+### 
 
 ```rust
-// ❌ 在 async 上下文中阻塞——会饿死其他任务
+// ❌  async ——
 async fn bad_async() {
-    let data = std::fs::read_to_string("file.txt").unwrap();  // 阻塞！
-    std::thread::sleep(Duration::from_secs(1));  // 阻塞！
+    let data = std::fs::read_to_string("file.txt").unwrap();  // ！
+    std::thread::sleep(Duration::from_secs(1));  // ！
 }
 
-// ✅ 使用异步 API
+// ✅  API
 async fn good_async() -> Result<String> {
     let data = tokio::fs::read_to_string("file.txt").await?;
     tokio::time::sleep(Duration::from_secs(1)).await;
     Ok(data)
 }
 
-// ✅ 如果必须使用阻塞操作，用 spawn_blocking
+// ✅ ， spawn_blocking
 async fn with_blocking() -> Result<Data> {
     let result = tokio::task::spawn_blocking(|| {
-        // 这里可以安全地进行阻塞操作
+        // 
         expensive_cpu_computation()
     }).await?;
     Ok(result)
 }
 ```
 
-### Mutex 和 .await
+### Mutex  .await
 
 ```rust
-// ❌ 跨 .await 持有 std::sync::Mutex——可能死锁
+// ❌  .await  std::sync::Mutex——
 async fn bad_lock(mutex: &std::sync::Mutex<Data>) {
     let guard = mutex.lock().unwrap();
-    async_operation().await;  // 持锁等待！
+    async_operation().await;  // ！
     process(&guard);
 }
 
-// ✅ 方案1：最小化锁范围
+// ✅ 1：
 async fn good_lock_scoped(mutex: &std::sync::Mutex<Data>) {
     let data = {
         let guard = mutex.lock().unwrap();
-        guard.clone()  // 立即释放锁
+        guard.clone()  // 
     };
     async_operation().await;
     process(&data);
 }
 
-// ✅ 方案2：使用 tokio::sync::Mutex（可跨 await）
+// ✅ 2： tokio::sync::Mutex（ await）
 async fn good_lock_tokio(mutex: &tokio::sync::Mutex<Data>) {
     let guard = mutex.lock().await;
-    async_operation().await;  // OK: tokio Mutex 设计为可跨 await
+    async_operation().await;  // OK: tokio Mutex  await
     process(&guard);
 }
 
-// 💡 选择指南：
-// - std::sync::Mutex：低竞争、短临界区、不跨 await
-// - tokio::sync::Mutex：需要跨 await、高竞争场景
+// 💡 ：
+// - std::sync::Mutex：、、 await
+// - tokio::sync::Mutex： await、
 ```
 
-### 异步 trait 方法
+###  trait 
 
 ```rust
-// ❌ async trait 方法的陷阱（旧版本）
+// ❌ async trait （）
 #[async_trait]
 trait BadRepository {
-    async fn find(&self, id: i64) -> Option<Entity>;  // 隐式 Box
+    async fn find(&self, id: i64) -> Option<Entity>;  //  Box
 }
 
-// ✅ Rust 1.75+：原生 async trait 方法
+// ✅ Rust 1.75+： async trait 
 trait Repository {
     async fn find(&self, id: i64) -> Option<Entity>;
 
-    // 返回具体 Future 类型以避免 allocation
+    //  Future  allocation
     fn find_many(&self, ids: &[i64]) -> impl Future<Output = Vec<Entity>> + Send;
 }
 
-// ✅ 对于需要 dyn 的场景
+// ✅  dyn 
 trait DynRepository: Send + Sync {
     fn find(&self, id: i64) -> Pin<Box<dyn Future<Output = Option<Entity>> + Send + '_>>;
 }
@@ -273,44 +273,44 @@ trait DynRepository: Send + Sync {
 
 ---
 
-## 取消安全性
+## 
 
-### 什么是取消安全
+### 
 
 ```rust
-// 当一个 Future 在 .await 点被 drop 时，它处于什么状态？
-// 取消安全的 Future：可以在任何 await 点安全取消
-// 取消不安全的 Future：取消可能导致数据丢失或不一致状态
+//  Future  .await  drop ，？
+//  Future： await 
+//  Future：
 
-// ❌ 取消不安全的例子
+// ❌ 
 async fn cancel_unsafe(conn: &mut Connection) -> Result<()> {
-    let data = receive_data().await;  // 如果这里被取消...
-    conn.send_ack().await;  // ...确认永远不会发送，数据可能丢失
+    let data = receive_data().await;  // ...
+    conn.send_ack().await;  // ...，
     Ok(())
 }
 
-// ✅ 取消安全的版本
+// ✅ 
 async fn cancel_safe(conn: &mut Connection) -> Result<()> {
-    // 使用事务或原子操作确保一致性
+    // 
     let transaction = conn.begin_transaction().await?;
     let data = receive_data().await;
-    transaction.commit_with_ack(data).await?;  // 原子操作
+    transaction.commit_with_ack(data).await?;  // 
     Ok(())
 }
 ```
 
-### select! 中的取消安全
+### select! 
 
 ```rust
 use tokio::select;
 
-// ❌ 在 select! 中使用取消不安全的 Future
+// ❌  select!  Future
 async fn bad_select(stream: &mut TcpStream) {
     let mut buffer = vec![0u8; 1024];
     loop {
         select! {
-            // 如果 timeout 先完成，read 被取消
-            // 部分读取的数据可能丢失！
+            //  timeout ，read 
+            // ！
             result = stream.read(&mut buffer) => {
                 handle_data(&buffer[..result?]);
             }
@@ -321,13 +321,13 @@ async fn bad_select(stream: &mut TcpStream) {
     }
 }
 
-// ✅ 使用取消安全的 API
+// ✅  API
 async fn good_select(stream: &mut TcpStream) {
     let mut buffer = vec![0u8; 1024];
     loop {
         select! {
-            // tokio::io::AsyncReadExt::read 是取消安全的
-            // 取消时，未读取的数据留在流中
+            // tokio::io::AsyncReadExt::read 
+            // ，
             result = stream.read(&mut buffer) => {
                 match result {
                     Ok(0) => break,  // EOF
@@ -342,7 +342,7 @@ async fn good_select(stream: &mut TcpStream) {
     }
 }
 
-// ✅ 使用 tokio::pin! 确保 Future 可以安全重用
+// ✅  tokio::pin!  Future 
 async fn pinned_select() {
     let sleep = tokio::time::sleep(Duration::from_secs(10));
     tokio::pin!(sleep);
@@ -355,14 +355,14 @@ async fn pinned_select() {
             }
             data = receive_data() => {
                 process(data).await;
-                // sleep 继续倒计时，不会重置
+                // sleep ，
             }
         }
     }
 }
 ```
 
-### 文档化取消安全性
+### 
 
 ```rust
 /// Reads a complete message from the stream.
@@ -394,55 +394,55 @@ async fn read_message_cancel_safe(reader: &mut BufferedReader) -> Result<Message
 
 ## spawn vs await
 
-### 何时使用 spawn
+###  spawn
 
 ```rust
-// ❌ 不必要的 spawn——增加开销，失去结构化并发
+// ❌  spawn——，
 async fn bad_unnecessary_spawn() {
     let handle = tokio::spawn(async {
         simple_operation().await
     });
-    handle.await.unwrap();  // 为什么不直接 await？
+    handle.await.unwrap();  //  await？
 }
 
-// ✅ 直接 await 简单操作
+// ✅  await 
 async fn good_direct_await() {
     simple_operation().await;
 }
 
-// ✅ spawn 用于真正的并行执行
+// ✅ spawn 
 async fn good_parallel_spawn() {
     let task1 = tokio::spawn(fetch_from_service_a());
     let task2 = tokio::spawn(fetch_from_service_b());
 
-    // 两个请求并行执行
+    // 
     let (result1, result2) = tokio::try_join!(task1, task2)?;
 }
 
-// ✅ spawn 用于后台任务（fire-and-forget）
+// ✅ spawn （fire-and-forget）
 async fn good_background_spawn() {
-    // 启动后台任务，不等待完成
+    // ，
     tokio::spawn(async {
         cleanup_old_sessions().await;
         log_metrics().await;
     });
 
-    // 继续执行其他工作
+    // 
     handle_request().await;
 }
 ```
 
-### spawn 的 'static 要求
+### spawn  'static 
 
 ```rust
-// ❌ spawn 的 Future 必须是 'static
+// ❌ spawn  Future  'static
 async fn bad_spawn_borrow(data: &Data) {
     tokio::spawn(async {
-        process(data).await;  // Error: `data` 不是 'static
+        process(data).await;  // Error: `data`  'static
     });
 }
 
-// ✅ 方案1：克隆数据
+// ✅ 1：
 async fn good_spawn_clone(data: &Data) {
     let owned = data.clone();
     tokio::spawn(async move {
@@ -450,7 +450,7 @@ async fn good_spawn_clone(data: &Data) {
     });
 }
 
-// ✅ 方案2：使用 Arc 共享
+// ✅ 2： Arc 
 async fn good_spawn_arc(data: Arc<Data>) {
     let data = Arc::clone(&data);
     tokio::spawn(async move {
@@ -458,29 +458,29 @@ async fn good_spawn_arc(data: Arc<Data>) {
     });
 }
 
-// ✅ 方案3：使用作用域任务（tokio-scoped 或 async-scoped）
+// ✅ 3：（tokio-scoped  async-scoped）
 async fn good_scoped_spawn(data: &Data) {
-    // 假设使用 async-scoped crate
+    //  async-scoped crate
     async_scoped::scope(|s| async {
         s.spawn(async {
-            process(data).await;  // 可以借用
+            process(data).await;  // 
         });
     }).await;
 }
 ```
 
-### JoinHandle 错误处理
+### JoinHandle 
 
 ```rust
-// ❌ 忽略 spawn 的错误
+// ❌  spawn 
 async fn bad_ignore_spawn_error() {
     let handle = tokio::spawn(async {
         risky_operation().await
     });
-    let _ = handle.await;  // 忽略了 panic 和错误
+    let _ = handle.await;  //  panic 
 }
 
-// ✅ 正确处理 JoinHandle 结果
+// ✅  JoinHandle 
 async fn good_handle_spawn_error() -> Result<()> {
     let handle = tokio::spawn(async {
         risky_operation().await
@@ -488,16 +488,16 @@ async fn good_handle_spawn_error() -> Result<()> {
 
     match handle.await {
         Ok(Ok(result)) => {
-            // 任务成功完成
+            // 
             process_result(result);
             Ok(())
         }
         Ok(Err(e)) => {
-            // 任务内部错误
+            // 
             Err(e.into())
         }
         Err(join_err) => {
-            // 任务 panic 或被取消
+            //  panic 
             if join_err.is_panic() {
                 error!("Task panicked: {:?}", join_err);
             }
@@ -507,13 +507,13 @@ async fn good_handle_spawn_error() -> Result<()> {
 }
 ```
 
-### 结构化并发 vs spawn
+###  vs spawn
 
 ```rust
-// ✅ 优先使用 join!（结构化并发）
+// ✅  join!（）
 async fn structured_concurrency() -> Result<(A, B, C)> {
-    // 所有任务在同一个作用域内
-    // 如果任何一个失败，其他的会被取消
+    // 
+    // ，
     tokio::try_join!(
         fetch_a(),
         fetch_b(),
@@ -521,14 +521,14 @@ async fn structured_concurrency() -> Result<(A, B, C)> {
     )
 }
 
-// ✅ 使用 spawn 时考虑任务生命周期
+// ✅  spawn 
 struct TaskManager {
     handles: Vec<JoinHandle<()>>,
 }
 
 impl TaskManager {
     async fn shutdown(self) {
-        // 优雅关闭：等待所有任务完成
+        // ：
         for handle in self.handles {
             if let Err(e) = handle.await {
                 error!("Task failed during shutdown: {}", e);
@@ -537,7 +537,7 @@ impl TaskManager {
     }
 
     async fn abort_all(self) {
-        // 强制关闭：取消所有任务
+        // ：
         for handle in self.handles {
             handle.abort();
         }
@@ -547,15 +547,15 @@ impl TaskManager {
 
 ---
 
-## 错误处理
+## 
 
-### 库 vs 应用的错误类型
+###  vs 
 
 ```rust
-// ❌ 库代码用 anyhow——调用者无法 match 错误
+// ❌  anyhow—— match 
 pub fn parse_config(s: &str) -> anyhow::Result<Config> { ... }
 
-// ✅ 库用 thiserror，应用用 anyhow
+// ✅  thiserror， anyhow
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
     #[error("invalid syntax at line {line}: {message}")]
@@ -569,22 +569,22 @@ pub enum ConfigError {
 pub fn parse_config(s: &str) -> Result<Config, ConfigError> { ... }
 ```
 
-### 保留错误上下文
+### 
 
 ```rust
-// ❌ 吞掉错误上下文
+// ❌ 
 fn bad_error() -> Result<()> {
-    operation().map_err(|_| anyhow!("failed"))?;  // 原始错误丢失
+    operation().map_err(|_| anyhow!("failed"))?;  // 
     Ok(())
 }
 
-// ✅ 使用 context 保留错误链
+// ✅  context 
 fn good_error() -> Result<()> {
     operation().context("failed to perform operation")?;
     Ok(())
 }
 
-// ✅ 使用 with_context 进行懒计算
+// ✅  with_context 
 fn good_error_lazy() -> Result<()> {
     operation()
         .with_context(|| format!("failed to process file: {}", filename))?;
@@ -592,10 +592,10 @@ fn good_error_lazy() -> Result<()> {
 }
 ```
 
-### 错误类型设计
+### 
 
 ```rust
-// ✅ 使用 #[source] 保留错误链
+// ✅  #[source] 
 #[derive(Debug, thiserror::Error)]
 pub enum ServiceError {
     #[error("database error")]
@@ -612,7 +612,7 @@ pub enum ServiceError {
     Validation(String),
 }
 
-// ✅ 为常见转换实现 From
+// ✅  From
 impl From<sqlx::Error> for ServiceError {
     fn from(err: sqlx::Error) -> Self {
         ServiceError::Database(err)
@@ -622,44 +622,44 @@ impl From<sqlx::Error> for ServiceError {
 
 ---
 
-## 性能
+## 
 
-### 避免不必要的 collect()
+###  collect()
 
 ```rust
-// ❌ 不必要的 collect——中间分配
+// ❌  collect——
 fn bad_sum(items: &[i32]) -> i32 {
     items.iter()
         .filter(|x| **x > 0)
-        .collect::<Vec<_>>()  // 不必要！
+        .collect::<Vec<_>>()  // ！
         .iter()
         .sum()
 }
 
-// ✅ 惰性迭代
+// ✅ 
 fn good_sum(items: &[i32]) -> i32 {
     items.iter().filter(|x| **x > 0).copied().sum()
 }
 ```
 
-### 字符串拼接
+### 
 
 ```rust
-// ❌ 字符串拼接在循环中重复分配
+// ❌ 
 fn bad_concat(items: &[&str]) -> String {
     let mut s = String::new();
     for item in items {
-        s = s + item;  // 每次都重新分配！
+        s = s + item;  // ！
     }
     s
 }
 
-// ✅ 预分配或用 join
+// ✅  join
 fn good_concat(items: &[&str]) -> String {
     items.join("")
 }
 
-// ✅ 使用 with_capacity 预分配
+// ✅  with_capacity 
 fn good_concat_capacity(items: &[&str]) -> String {
     let total_len: usize = items.iter().map(|s| s.len()).sum();
     let mut result = String::with_capacity(total_len);
@@ -669,7 +669,7 @@ fn good_concat_capacity(items: &[&str]) -> String {
     result
 }
 
-// ✅ 使用 write! 宏
+// ✅  write! 
 use std::fmt::Write;
 
 fn good_concat_write(items: &[&str]) -> String {
@@ -681,10 +681,10 @@ fn good_concat_write(items: &[&str]) -> String {
 }
 ```
 
-### 避免不必要的分配
+### 
 
 ```rust
-// ❌ 不必要的 Vec 分配
+// ❌  Vec 
 fn bad_check_any(items: &[Item]) -> bool {
     let filtered: Vec<_> = items.iter()
         .filter(|i| i.is_valid())
@@ -692,66 +692,66 @@ fn bad_check_any(items: &[Item]) -> bool {
     !filtered.is_empty()
 }
 
-// ✅ 使用迭代器方法
+// ✅ 
 fn good_check_any(items: &[Item]) -> bool {
     items.iter().any(|i| i.is_valid())
 }
 
-// ❌ String::from 用于静态字符串
+// ❌ String::from 
 fn bad_static() -> String {
-    String::from("error message")  // 运行时分配
+    String::from("error message")  // 
 }
 
-// ✅ 返回 &'static str
+// ✅  &'static str
 fn good_static() -> &'static str {
-    "error message"  // 无分配
+    "error message"  // 
 }
 ```
 
 ---
 
-## Trait 设计
+## Trait 
 
-### 避免过度抽象
+### 
 
 ```rust
-// ❌ 过度抽象——不是 Java，不需要 Interface 一切
+// ❌ —— Java， Interface 
 trait Processor { fn process(&self); }
 trait Handler { fn handle(&self); }
-trait Manager { fn manage(&self); }  // Trait 过多
+trait Manager { fn manage(&self); }  // Trait 
 
-// ✅ 只在需要多态时创建 trait
-// 具体类型通常更简单、更快
+// ✅  trait
+// 、
 struct DataProcessor {
     config: Config,
 }
 
 impl DataProcessor {
     fn process(&self, data: &Data) -> Result<Output> {
-        // 直接实现
+        // 
     }
 }
 ```
 
-### Trait 对象 vs 泛型
+### Trait  vs 
 
 ```rust
-// ❌ 不必要的 trait 对象（动态分发）
+// ❌  trait （）
 fn bad_process(handler: &dyn Handler) {
-    handler.handle();  // 虚表调用
+    handler.handle();  // 
 }
 
-// ✅ 使用泛型（静态分发，可内联）
+// ✅ （，）
 fn good_process<H: Handler>(handler: &H) {
-    handler.handle();  // 可能被内联
+    handler.handle();  // 
 }
 
-// ✅ trait 对象适用场景：异构集合
+// ✅ trait ：
 fn store_handlers(handlers: Vec<Box<dyn Handler>>) {
-    // 需要存储不同类型的 handlers
+    //  handlers
 }
 
-// ✅ 使用 impl Trait 返回类型
+// ✅  impl Trait 
 fn create_handler() -> impl Handler {
     ConcreteHandler::new()
 }
@@ -761,80 +761,80 @@ fn create_handler() -> impl Handler {
 
 ## Rust Review Checklist
 
-### 编译器不能捕获的问题
+### 
 
-**业务逻辑正确性**
-- [ ] 边界条件处理正确
-- [ ] 状态机转换完整
-- [ ] 并发场景下的竞态条件
+****
+- [ ] 
+- [ ] 
+- [ ] 
 
-**API 设计**
-- [ ] 公共 API 难以误用
-- [ ] 类型签名清晰表达意图
-- [ ] 错误类型粒度合适
+**API **
+- [ ]  API 
+- [ ] 
+- [ ] 
 
-### 所有权与借用
+### 
 
-- [ ] clone() 是有意为之，文档说明了原因
-- [ ] Arc<Mutex<T>> 真的需要共享状态吗？
-- [ ] RefCell 的使用有正当理由
-- [ ] 生命周期不过度复杂
-- [ ] 考虑使用 Cow 避免不必要的分配
+- [ ] clone() ，
+- [ ] Arc<Mutex<T>> ？
+- [ ] RefCell 
+- [ ] 
+- [ ]  Cow 
 
-### Unsafe 代码（最重要）
+### Unsafe （）
 
-- [ ] 每个 unsafe 块有 SAFETY 注释
-- [ ] unsafe fn 有 # Safety 文档节
-- [ ] 解释了为什么是安全的，不只是做什么
-- [ ] 列出了必须维护的不变量
-- [ ] unsafe 边界尽可能小
-- [ ] 考虑过是否有 safe 替代方案
+- [ ]  unsafe  SAFETY 
+- [ ] unsafe fn  # Safety 
+- [ ] ，
+- [ ] 
+- [ ] unsafe 
+- [ ]  safe 
 
-### 异步/并发
+### /
 
-- [ ] 没有在 async 中阻塞（std::fs、thread::sleep）
-- [ ] 没有跨 .await 持有 std::sync 锁
-- [ ] spawn 的任务满足 'static
-- [ ] 锁的获取顺序一致
-- [ ] Channel 缓冲区大小合理
+- [ ]  async （std::fs、thread::sleep）
+- [ ]  .await  std::sync 
+- [ ] spawn  'static
+- [ ] 
+- [ ] Channel 
 
-### 取消安全性
+### 
 
-- [ ] select! 中的 Future 是取消安全的
-- [ ] 文档化了 async 函数的取消安全性
-- [ ] 取消不会导致数据丢失或不一致状态
-- [ ] 使用 tokio::pin! 正确处理需要重用的 Future
+- [ ] select!  Future 
+- [ ]  async 
+- [ ] 
+- [ ]  tokio::pin!  Future
 
 ### spawn vs await
 
-- [ ] spawn 只用于真正需要并行的场景
-- [ ] 简单操作直接 await，不要 spawn
-- [ ] spawn 的 JoinHandle 结果被正确处理
-- [ ] 考虑任务的生命周期和关闭策略
-- [ ] 优先使用 join!/try_join! 进行结构化并发
+- [ ] spawn 
+- [ ]  await， spawn
+- [ ] spawn  JoinHandle 
+- [ ] 
+- [ ]  join!/try_join! 
 
-### 错误处理
+### 
 
-- [ ] 库：thiserror 定义结构化错误
-- [ ] 应用：anyhow + context
-- [ ] 没有生产代码 unwrap/expect
-- [ ] 错误消息对调试有帮助
-- [ ] must_use 返回值被处理
-- [ ] 使用 #[source] 保留错误链
+- [ ] ：thiserror 
+- [ ] ：anyhow + context
+- [ ]  unwrap/expect
+- [ ] 
+- [ ] must_use 
+- [ ]  #[source] 
 
-### 性能
+### 
 
-- [ ] 避免不必要的 collect()
-- [ ] 大数据传引用
-- [ ] 字符串用 with_capacity 或 write!
-- [ ] impl Trait vs Box<dyn Trait> 选择合理
-- [ ] 热路径避免分配
-- [ ] 考虑使用 Cow 减少克隆
+- [ ]  collect()
+- [ ] 
+- [ ]  with_capacity  write!
+- [ ] impl Trait vs Box<dyn Trait> 
+- [ ] 
+- [ ]  Cow 
 
-### 代码质量
+### 
 
-- [ ] cargo clippy 零警告
-- [ ] cargo fmt 格式化
-- [ ] 文档注释完整
-- [ ] 测试覆盖边界条件
-- [ ] 公共 API 有文档示例
+- [ ] cargo clippy 
+- [ ] cargo fmt 
+- [ ] 
+- [ ] 
+- [ ]  API 
