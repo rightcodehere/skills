@@ -1,0 +1,66 @@
+/* ============================================================
+   DLTX Corporate Template — Design System
+   Canvas: 1280 × 720 (16:9)
+   Source: DLTX_PPT_Format_EN.potx (Daiichi Life Techno Cross)
+   ============================================================ */
+
+:root {
+  /* --- Brand palette ----------------------------------------- */
+  --color-bg:          #FFFFFF;
+  --color-ink:         #000000;
+  --color-ink-soft:    #4A4A4A;
+  --color-rule:        #1F49F0;        /* horizontal rule under chapter title */
+  --color-pagenum:     #6B6B6B;
+
+  /* Brand blues — used on dividers, accents, callouts */
+  --color-cobalt:      #1746FF;        /* primary brand cobalt */
+  --color-blue:        #0099FF;        /* mid blue */
+  --color-sky:         #3FC3F5;        /* light sky / cyan */
+  --color-navy:        #000080;        /* dark navy */
+  --color-cobalt-deep: #1230D0;
+
+  /* Neutrals for cards and tracks */
+  --color-card-bg:     #D9D9D9;        /* light grey card body */
+  --color-card-track:  #EAEAEA;        /* zebra row */
+
+  /* --- Type scale (pt → px @ 1.333) -------------------------- */
+  --font-family:       'Arial', 'Helvetica Neue', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+
+  --fs-cover-title:    61px;   /* 46pt */
+  --fs-cover-meta:     24px;   /* 18pt */
+  --fs-chapter-title:  37px;   /* 28pt */
+  --fs-section-title:  64px;   /* 48pt — divider pages */
+  --fs-body-lg:        21px;   /* 16pt */
+  --fs-body:           19px;   /* 14pt */
+  --fs-body-sm:        16px;   /* 12pt */
+  --fs-caption:        13px;   /* 10pt */
+  --fs-pagenum:        13px;
+
+  /* --- Geometry ---------------------------------------------- */
+  --canvas-w: 1280px;
+  --canvas-h: 720px;
+}
+
+/* ------------------------------------------------------------ */
+/* Base reset for every slide                                   */
+/* ------------------------------------------------------------ */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--font-family);
+  color: var(--color-ink);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.slide-container {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  background: var(--color-bg);
+}

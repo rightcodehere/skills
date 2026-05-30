@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "format": "html",
+  "metadata": {
+    "title": "DLTX Corporate Template",
+    "description": "Daiichi Life Techno Cross all-purpose corporate template — bilingual EN/JP. Cobalt-blue brand system with two cover variants, four section dividers, and a full set of content layouts (agenda, timeline, case study, comparison, schedule).",
+    "author": ""
+  },
+  "canvas": {"width": 1280, "height": 720},
+  "playlist": [
+    "01-cover-light.html",
+    "02-cover-blue.html",
+    "03-chapter-blank.html",
+    "04-chapter-accent.html",
+    "05-agenda-numbered.html",
+    "06-agenda-flow.html",
+    "07-three-column.html",
+    "08-icon-cards.html",
+    "09-case-study.html",
+    "10-comparison-table.html",
+    "11-schedule-gantt.html",
+    "12-divider-cobalt.html",
+    "13-divider-sky.html",
+    "14-divider-blue.html",
+    "15-divider-navy.html"
+  ]
+}
