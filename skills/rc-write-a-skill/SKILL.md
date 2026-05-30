@@ -38,7 +38,7 @@ skill-name/
 
 ```md
 ---
-name: skill-name
+name: rc-write-a-skill
 description: Brief description of capability. Use when [specific triggers].
 ---
 
@@ -54,7 +54,7 @@ description: Brief description of capability. Use when [specific triggers].
 
 ## Advanced features
 
-[Link to separate files: See REFERENCE.md]
+[Link to separate reference files when content exceeds ~500 lines]
 ```
 
 ## Description Requirements

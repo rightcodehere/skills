@@ -138,7 +138,7 @@ def check_auth() -> None:
 # Skill mappings — mirrors SOURCES.md
 # ─────────────────────────────────────────────────────────────────────────────
 MATTPOCOCK_SKILLS = [
-    {"cat": "engineering",  "up": "diagnose",                      "local": "rc-diagnose",                      "files": ["SKILL.md", "scripts/hitl-loop.template.sh"]},
+    {"cat": "engineering",  "up": "diagnose",                      "local": "rc-diagnose",                      "files": ["SKILL.md"]},  # scripts/hitl-loop.template.sh excluded — shell script, Python-only policy
     {"cat": "engineering",  "up": "grill-with-docs",               "local": "rc-grill-with-docs",               "files": ["SKILL.md", "ADR-FORMAT.md", "CONTEXT-FORMAT.md"]},
     {"cat": "engineering",  "up": "improve-codebase-architecture",  "local": "rc-improve-codebase-architecture",  "files": ["SKILL.md", "DEEPENING.md", "INTERFACE-DESIGN.md", "LANGUAGE.md"]},
     {"cat": "engineering",  "up": "prototype",                     "local": "rc-prototype",                     "files": ["SKILL.md", "LOGIC.md", "UI.md"]},
@@ -152,7 +152,7 @@ MATTPOCOCK_SKILLS = [
     {"cat": "productivity", "up": "grill-me",                      "local": "rc-grill-me",                      "files": ["SKILL.md"]},
     {"cat": "productivity", "up": "handoff",                       "local": "rc-handoff",                       "files": ["SKILL.md"]},
     {"cat": "productivity", "up": "write-a-skill",                 "local": "rc-write-a-skill",                 "files": ["SKILL.md"]},
-    {"cat": "misc",         "up": "git-guardrails-claude-code",    "local": "rc-git-guardrails",                "files": ["SKILL.md", "scripts/block-dangerous-git.sh"]},
+    {"cat": "misc",         "up": "git-guardrails-claude-code",    "local": "rc-git-guardrails",                "files": ["SKILL.md"]},  # scripts/block-dangerous-git.sh excluded — shell script, Python-only policy
     {"cat": "misc",         "up": "migrate-to-shoehorn",           "local": "rc-migrate-to-shoehorn",           "files": ["SKILL.md"]},
     {"cat": "misc",         "up": "scaffold-exercises",            "local": "rc-scaffold-exercises",            "files": ["SKILL.md"]},
     {"cat": "misc",         "up": "setup-pre-commit",              "local": "rc-setup-pre-commit",              "files": ["SKILL.md"]},

@@ -189,10 +189,8 @@ Use labels to indicate priority:
 | **Kotlin / Android** | [Kotlin Guide](reference/kotlin.md) | 协程, Flow, Jetpack Compose, 空安全, 内存泄漏, 架构模式 |
 | **NestJS** | [NestJS Guide](reference/nestjs.md) | 依赖注入, 分层架构, DTO 验证, Guard/Interceptor, 循环依赖 |
 | **Svelte / SvelteKit** | [Svelte Guide](reference/svelte.md) | Runes, Load 函数, Form Actions, Store 迁移, SSR/CSR 边界 |
-| **C** | C Guide | 指针/缓冲区, 内存安全, UB, 错误处理 |
-| **C++** | C++ Guide | RAII, 生命周期, Rule of 0/3/5, 异常安全 |
+
 | **CSS/Less/Sass** | [CSS Guide](reference/css-less-sass.md) | 变量规范, !important, 性能优化, 响应式, 兼容性 |
-| **Qt** | Qt Guide | 对象模型, 信号/槽, 内存管理, 线程安全, 性能 |
 
 ## Cross-Cutting Guides
 
@@ -209,5 +207,3 @@ Language-agnostic patterns applicable to all code reviews:
 - [Common Bugs Checklist](reference/common-bugs-checklist.md) - 按语言分类的常见错误清单
 - [Security Review Guide](reference/security-review-guide.md) - 安全审查指南
 - [Code Review Best Practices](reference/code-review-best-practices.md) - 代码审查最佳实践
-- PR Review Template - PR 审查评论模板
-- Review Checklist - 快速参考清单

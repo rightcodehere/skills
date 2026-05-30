@@ -46,6 +46,15 @@ Two upstream sources. The codeprobe sub-skills (`rc-codeprobe-*`) are **local-on
 | `in-progress` | `writing-shape` | Personal content, out of scope |
 | `deprecated` | *(all)* | Deprecated by upstream |
 
+### Upstream files NOT synced (script policy exclusions)
+
+Upstream `.sh` scripts are excluded — this repo requires all skill scripts to be **Python only** (cross-platform). The `scripts/` subfolders for the skills below contain shell scripts that will never be synced.
+
+| Local Folder | Excluded Upstream File | Reason |
+|---|---|---|
+| `rc-git-guardrails` | `scripts/block-dangerous-git.sh` | Shell script — Python-only policy; not needed (skill instructions cover the setup) |
+| `rc-diagnose` | `scripts/hitl-loop.template.sh` | Shell script — Python-only policy |
+
 ### API endpoints for mattpocock/skills
 
 ```powershell

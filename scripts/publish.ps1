@@ -6,5 +6,5 @@ Get-Content "$PSScriptRoot\..\.env" | ForEach-Object {
 }
 
 npm version patch
-$env:NODE_AUTH_TOKEN = $env:NODE_AUTH_TOKEN
+npm config set "//registry.npmjs.org/:_authToken" $env:NODE_AUTH_TOKEN
 npm publish
